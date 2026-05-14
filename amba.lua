@@ -1,5 +1,5 @@
 -- AMBA.HUB - Pinguin Supreme --
--- TABBED EDITION (FIXED INFO & CLICKABLE LINK) --
+-- TABBED EDITION (MAIN & INFO) --
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -44,12 +44,13 @@ BgImage.Image = "rbxassetid://121562925685767"
 BgImage.ImageTransparency = 0.4
 BgImage.ZIndex = 2
 
--- TAB BAR
+-- TAB BAR (BAGIAN ATAS)
 local TabBar = Instance.new("Frame")
 TabBar.Name = "TabBar"
 TabBar.Parent = MainFrame
 TabBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 TabBar.BorderSizePixel = 0
+TabBar.Position = UDim2.new(0, 0, 0, 0)
 TabBar.Size = UDim2.new(1, 0, 0, 45)
 TabBar.ZIndex = 4
 
@@ -64,6 +65,7 @@ Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Font = Enum.Font.SourceSansBold
 Title.ZIndex = 5
 
+-- BUTTONS UNTUK PINDAH TAB
 local MainTabBtn = Instance.new("TextButton")
 MainTabBtn.Parent = TabBar
 MainTabBtn.Position = UDim2.new(0.5, 0, 0, 0)
@@ -88,6 +90,7 @@ InfoTabBtn.ZIndex = 5
 
 -- PAGES
 local MainPage = Instance.new("Frame")
+MainPage.Name = "MainPage"
 MainPage.Parent = MainFrame
 MainPage.BackgroundTransparency = 1
 MainPage.Position = UDim2.new(0, 0, 0.15, 0)
@@ -96,6 +99,7 @@ MainPage.Visible = true
 MainPage.ZIndex = 3
 
 local InfoPage = Instance.new("Frame")
+InfoPage.Name = "InfoPage"
 InfoPage.Parent = MainFrame
 InfoPage.BackgroundTransparency = 1
 InfoPage.Position = UDim2.new(0, 0, 0.15, 0)
@@ -103,7 +107,7 @@ InfoPage.Size = UDim2.new(1, 0, 0.85, 0)
 InfoPage.Visible = false
 InfoPage.ZIndex = 3
 
--- TAB MAIN CONTENT
+-- ISI TAB MAIN (TOMBOL CHEAT)
 local function CreateBtn(text, pos)
     local btn = Instance.new("TextButton")
     btn.Parent = MainPage
@@ -124,55 +128,35 @@ end
 local AimBtn = CreateBtn("AUTO AIM", UDim2.new(0.5, -125, 0.2, 0))
 local EspBtn = CreateBtn("ESP", UDim2.new(0.5, -125, 0.5, 0))
 
--- TAB INFO CONTENT (WHITE & CLICKABLE)
-local InfoTitle = Instance.new("TextLabel")
-InfoTitle.Parent = InfoPage
-InfoTitle.Size = UDim2.new(1, 0, 0.3, 0)
-InfoTitle.Position = UDim2.new(0, 0, 0.1, 0)
-InfoTitle.BackgroundTransparency = 1
-InfoTitle.Text = "Script ini dibuat oleh pinguin76pekob\nIndonesian Programmer"
-InfoTitle.TextColor3 = Color3.fromRGB(255, 255, 255) -- PUTIH TERANG
-InfoTitle.TextSize = 22
-InfoTitle.Font = Enum.Font.SourceSansBold
-InfoTitle.ZIndex = 6
+-- ISI TAB INFO
+local InfoText = Instance.new("TextLabel")
+InfoText.Parent = InfoPage
+InfoText.Size = UDim2.new(0.8, 0, 0.6, 0)
+InfoText.Position = UDim2.new(0.1, 0, 0.1, 0)
+InfoText.BackgroundTransparency = 1
+InfoText.Text = "Script ini dibuat oleh pinguin76pekob indonesian programmer\n\nJoin our discord:\nhttps://discord.gg/v8TN6y6Xut"
+InfoText.TextColor3 = Color3.fromRGB(255, 255, 255)
+InfoText.TextSize = 20
+InfoText.Font = Enum.Font.SourceSansItalic
+InfoText.TextWrapped = true
+InfoText.ZIndex = 6
 
-local DiscordBtn = Instance.new("TextButton")
-DiscordBtn.Parent = InfoPage
-DiscordBtn.Size = UDim2.new(0.6, 0, 0.15, 0)
-DiscordBtn.Position = UDim2.new(0.2, 0, 0.5, 0)
-DiscordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242) -- WARNA DISCORD
-DiscordBtn.BorderSizePixel = 0
-DiscordBtn.Text = "JOIN DISCORD"
-DiscordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-DiscordBtn.TextSize = 18
-DiscordBtn.Font = Enum.Font.SourceSansBold
-DiscordBtn.ZIndex = 7
-
--- FUNGSI KLIK DISCORD
-DiscordBtn.MouseButton1Click:Connect(function()
-    local url = "https://discord.gg/v8TN6y6Xut"
-    if setclipboard then setclipboard(url) end -- COPY KE CLIPBOARD JUGA
-    if request then
-        request({Url = "http://localhost:1111/open/" .. url, Method = "GET"}) -- BEBERAPA EXECUTOR SUPPORT INI
-    end
-    -- NOTIFIKASI
-    DiscordBtn.Text = "LINK COPIED TO CLIPBOARD!"
-    task.wait(2)
-    DiscordBtn.Text = "JOIN DISCORD"
-end)
-
--- LOGIC TAB SWITCH
+-- LOGIC PINDAH TAB
 MainTabBtn.MouseButton1Click:Connect(function()
-    MainPage.Visible, InfoPage.Visible = true, false
-    MainTabBtn.TextColor3, InfoTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255), Color3.fromRGB(150, 150, 150)
+    MainPage.Visible = true
+    InfoPage.Visible = false
+    MainTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    InfoTabBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
 end)
 
 InfoTabBtn.MouseButton1Click:Connect(function()
-    MainPage.Visible, InfoPage.Visible = false, true
-    MainTabBtn.TextColor3, InfoTabBtn.TextColor3 = Color3.fromRGB(150, 150, 150), Color3.fromRGB(255, 255, 255)
+    MainPage.Visible = false
+    InfoPage.Visible = true
+    MainTabBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
+    InfoTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 end)
 
--- TOGGLES & RUNSERVICE (SAMA SEPERTI SEBELUMNYA)
+-- TOGGLE LOGIC (AIM & ESP)
 AimBtn.MouseButton1Click:Connect(function()
     _G.AimbotEnabled = not _G.AimbotEnabled
     AimBtn.Text = "AUTO AIM: " .. (_G.AimbotEnabled and "ON" or "OFF")
@@ -183,10 +167,20 @@ EspBtn.MouseButton1Click:Connect(function()
     EspBtn.Text = "ESP: " .. (_G.ESPEnabled and "ON" or "OFF")
     if not _G.ESPEnabled then
         for _, p in pairs(Players:GetPlayers()) do
-            if p.Character and p.Character:FindFirstChild("AMBA_ESP") then p.Character.AMBA_ESP:Destroy() end
+            if p.Character and p.Character:FindFirstChild("AMBA_ESP") then
+                p.Character.AMBA_ESP:Destroy()
+            end
         end
     end
 end)
+
+-- NEON BAR & MINIMIZE (TETEP ADA)
+local NeonBar = Instance.new("Frame")
+NeonBar.Parent = MainFrame
+NeonBar.Size = UDim2.new(1, 0, 0, 4)
+NeonBar.Position = UDim2.new(0, 0, 1, -4)
+NeonBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+NeonBar.ZIndex = 4
 
 local MinimizeBtn = Instance.new("TextButton")
 MinimizeBtn.Parent = TabBar
@@ -194,10 +188,22 @@ MinimizeBtn.Position = UDim2.new(1, -40, 0, 7)
 MinimizeBtn.Size = UDim2.new(0, 30, 0, 30)
 MinimizeBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 MinimizeBtn.Text = "-"
+MinimizeBtn.TextColor3 = Color3.new(1, 1, 1)
 MinimizeBtn.ZIndex = 10
 
-MinimizeBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
+local MiniBox = Instance.new("TextButton")
+MiniBox.Parent = ScreenGui
+MiniBox.Size = UDim2.new(0, 45, 0, 45)
+MiniBox.Position = UDim2.new(0.02, 0, 0.9, 0)
+MiniBox.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+MiniBox.Text = "A"
+MiniBox.TextColor3 = Color3.new(1, 1, 1)
+MiniBox.Visible = false
 
+MinimizeBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false; MiniBox.Visible = true end)
+MiniBox.MouseButton1Click:Connect(function() MainFrame.Visible = true; MiniBox.Visible = false end)
+
+-- RUNSERVICE LOOP
 RunService.RenderStepped:Connect(function()
     if _G.ESPEnabled then
         for _, p in pairs(Players:GetPlayers()) do
@@ -209,16 +215,22 @@ RunService.RenderStepped:Connect(function()
         end
     end
     if _G.AimbotEnabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
-        local target, maxDist = nil, _G.CircleRadius
+        local target = nil
+        local maxDist = _G.CircleRadius
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
                 local pos, vis = Camera:WorldToViewportPoint(p.Character.Head.Position)
                 if vis then
                     local mag = (Vector2.new(pos.X, pos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
-                    if mag < maxDist then target, maxDist = p.Character.Head, mag end
+                    if mag < maxDist then
+                        target = p.Character.Head
+                        maxDist = mag
+                    end
                 end
             end
         end
         if target then Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position) end
     end
 end)
+
+print("AMBA.HUB SUPREME TABBED EDITION LOADED!")
