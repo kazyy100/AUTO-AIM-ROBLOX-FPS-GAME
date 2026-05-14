@@ -1,168 +1,175 @@
---[[
-      AMBA.HUB by pinguin
-      Description: Aimbot & ESP with Toggle GUI.
---]]
+-- AMBA.HUB - Pinguin Supreme --
+-- MANUAL TOGGLE EDITION --
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local CoreGui = game:GetService("CoreGui")
 
--- ==========================================
--- 1. SETTING DEFAULT
--- ==========================================
-_G.AimbotEnabled = true
-_G.ESPEnabled = true
+-- SETTINGS AWAL (MATI SEMUA PAS AWAL LOAD)
+_G.AimbotEnabled = false
+_G.ESPEnabled = false
 _G.CircleRadius = 150
-_G.CircleColor = Color3.fromRGB(255, 0, 255)
-_G.AimbotKey = Enum.UserInputType.MouseButton2
 
--- ==========================================
--- 2. BUILD TOGGLE GUI
--- ==========================================
-if CoreGui:FindFirstChild("AmbaHubGui") then
-    CoreGui.AmbaHubGui:Destroy()
+-- CLEANUP BIAR GAK DOUBLE
+if game:GetService("CoreGui"):FindFirstChild("AMBA.HUB") then
+    game:GetService("CoreGui")["AMBA.HUB"]:Destroy()
 end
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "AmbaHubGui"
-ScreenGui.Parent = CoreGui
+ScreenGui.Name = "AMBA.HUB"
+ScreenGui.Parent = game:GetService("CoreGui") or LocalPlayer:WaitForChild("PlayerGui")
 ScreenGui.ResetOnSpawn = false
 
--- --- Main Panel ---
+-- MAIN FRAME (WIDE & CENTERED)
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 MainFrame.BorderSizePixel = 0
-MainFrame.Position = UDim2.new(0.5, -100, 0.4, -60)
-MainFrame.Size = UDim2.new(0, 200, 0, 150)
-MainFrame.Visible = true
+MainFrame.Position = UDim2.new(0.5, -275, 0.5, -175)
+MainFrame.Size = UDim2.new(0, 550, 0, 350)
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.ZIndex = 1
 
-local UICorner_Main = Instance.new("UICorner")
-UICorner_Main.CornerRadius = UDim.new(0, 10)
-UICorner_Main.Parent = MainFrame
+-- BACKGROUND SASUKE (rbxassetid://121562925685767)
+local BgImage = Instance.new("ImageLabel")
+BgImage.Name = "SasukeBg"
+BgImage.Parent = MainFrame
+BgImage.BackgroundTransparency = 1
+BgImage.Size = UDim2.new(1, 0, 1, 0)
+BgImage.Image = "rbxassetid://121562925685767"
+BgImage.ImageTransparency = 0.4
+BgImage.ZIndex = 2 -- DI ATAS FRAME HITAM
 
+-- LAMPU NEON BAWAH (HITAM PUTIH)
+local NeonBar = Instance.new("Frame")
+NeonBar.Parent = MainFrame
+NeonBar.Size = UDim2.new(1, 0, 0, 4)
+NeonBar.Position = UDim2.new(0, 0, 1, -4)
+NeonBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+NeonBar.BorderSizePixel = 0
+NeonBar.ZIndex = 4
+
+-- TITLE
 local Title = Instance.new("TextLabel")
 Title.Parent = MainFrame
-Title.Text = "AMBA.HUB by pinguin"
-Title.Size = UDim2.new(1, 0, 0, 30)
-Title.TextColor3 = Color3.fromRGB(255, 0, 150)
-Title.BackgroundTransparency = 1
-Title.Font = Enum.Font.Code
-Title.TextSize = 16
+Title.Size = UDim2.new(1, 0, 0, 45)
+Title.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+Title.Text = "  AMBA.HUB - Pinguin"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 22
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Font = Enum.Font.SourceSansBold
+Title.ZIndex = 4
 
--- --- Tombol ESP ---
-local ESPBtn = Instance.new("TextButton")
-ESPBtn.Parent = MainFrame
-ESPBtn.Text = "ESP: ON"
-ESPBtn.Size = UDim2.new(0.8, 0, 0, 30)
-ESPBtn.Position = UDim2.new(0.1, 0, 0.25, 0)
-ESPBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-ESPBtn.TextColor3 = Color3.new(1, 1, 1)
-ESPBtn.Font = Enum.Font.SourceSans
-ESPBtn.TextSize = 16
-Instance.new("UICorner", ESPBtn)
+-- CONTAINER TOMBOL (CENTERED)
+local ButtonContainer = Instance.new("Frame")
+ButtonContainer.Parent = MainFrame
+ButtonContainer.BackgroundTransparency = 1
+ButtonContainer.Position = UDim2.new(0.5, -125, 0.4, 0)
+ButtonContainer.Size = UDim2.new(0, 250, 0, 200)
+ButtonContainer.ZIndex = 5
 
--- --- Tombol AIM ---
-local AimBtn = Instance.new("TextButton")
-AimBtn.Parent = MainFrame
-AimBtn.Text = "AIM: ON"
-AimBtn.Size = UDim2.new(0.8, 0, 0, 30)
-AimBtn.Position = UDim2.new(0.1, 0, 0.5, 0)
-AimBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-AimBtn.TextColor3 = Color3.new(1, 1, 1)
-AimBtn.Font = Enum.Font.SourceSans
-AimBtn.TextSize = 16
-Instance.new("UICorner", AimBtn)
-
--- --- Tombol HIDE ---
-local HideBtn = Instance.new("TextButton")
-HideBtn.Parent = MainFrame
-HideBtn.Text = "CLOSE MENU"
-HideBtn.Size = UDim2.new(0.8, 0, 0, 25)
-HideBtn.Position = UDim2.new(0.1, 0, 0.75, 0)
-HideBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-HideBtn.TextColor3 = Color3.new(1, 1, 1)
-HideBtn.Font = Enum.Font.SourceSansBold
-HideBtn.TextSize = 14
-Instance.new("UICorner", HideBtn)
-
--- --- Mini Toggle ---
-local OpenBtn = Instance.new("TextButton")
-OpenBtn.Parent = ScreenGui
-OpenBtn.Text = "X"
-OpenBtn.Size = UDim2.new(0, 40, 0, 40)
-OpenBtn.Position = UDim2.new(0, 10, 0.5, -20)
-OpenBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 150)
-OpenBtn.TextColor3 = Color3.new(1, 1, 1)
-OpenBtn.Font = Enum.Font.SourceSansBold
-OpenBtn.TextSize = 24
-OpenBtn.Visible = false
-local UICorner_Open = Instance.new("UICorner")
-UICorner_Open.CornerRadius = UDim.new(1, 0)
-UICorner_Open.Parent = OpenBtn
-
--- ==========================================
--- 3. LOGIC
--- ==========================================
-ESPBtn.MouseButton1Click:Connect(function()
-    _G.ESPEnabled = not _G.ESPEnabled
-    ESPBtn.Text = _G.ESPEnabled and "ESP: ON" or "ESP: OFF"
-    ESPBtn.BackgroundColor3 = _G.ESPEnabled and Color3.fromRGB(40, 40, 40) or Color3.fromRGB(80, 0, 0)
-end)
-
-AimBtn.MouseButton1Click:Connect(function()
-    _G.AimbotEnabled = not _G.AimbotEnabled
-    AimBtn.Text = _G.AimbotEnabled and "AIM: ON" or "AIM: OFF"
-    AimBtn.BackgroundColor3 = _G.AimbotEnabled and Color3.fromRGB(40, 40, 40) or Color3.fromRGB(80, 0, 0)
-end)
-
-HideBtn.MouseButton1Click:Connect(function()
-    MainFrame.Visible = false
-    OpenBtn.Visible = true
-end)
-
-OpenBtn.MouseButton1Click:Connect(function()
-    MainFrame.Visible = true
-    OpenBtn.Visible = false
-end)
-
-local FOVCircle = Drawing.new("Circle")
-FOVCircle.Thickness = 2
-FOVCircle.Radius = _G.CircleRadius
-FOVCircle.Visible = true
-FOVCircle.Color = _G.CircleColor
-
-local function GetTarget()
-    local target, dist = nil, _G.CircleRadius
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
-            local pos, vis = Camera:WorldToViewportPoint(p.Character.Head.Position)
-            if vis then
-                local m = (Vector2.new(pos.X, pos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
-                if m < dist then dist = m target = p.Character.Head end
-            end
-        end
-    end
-    return target
+local function CreateBtn(text, pos)
+    local btn = Instance.new("TextButton")
+    btn.Parent = ButtonContainer
+    btn.Position = pos
+    btn.Size = UDim2.new(1, 0, 0, 55)
+    btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    btn.BackgroundTransparency = 0.5
+    btn.BorderSizePixel = 1
+    btn.BorderColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Text = text .. ": OFF"
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 18
+    btn.Font = Enum.Font.SourceSansBold
+    btn.ZIndex = 6
+    return btn
 end
 
-RunService.RenderStepped:Connect(function()
-    FOVCircle.Position = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
-    FOVCircle.Visible = _G.AimbotEnabled
-    if _G.ESPEnabled then
+local AimBtn = CreateBtn("AUTO AIM", UDim2.new(0, 0, 0, 0))
+local EspBtn = CreateBtn("ESP", UDim2.new(0, 0, 0, 75))
+
+-- MANUAL TOGGLE LOGIC
+AimBtn.MouseButton1Click:Connect(function()
+    _G.AimbotEnabled = not _G.AimbotEnabled
+    AimBtn.Text = "AUTO AIM: " .. (_G.AimbotEnabled and "ON" or "OFF")
+end)
+
+EspBtn.MouseButton1Click:Connect(function()
+    _G.ESPEnabled = not _G.ESPEnabled
+    EspBtn.Text = "ESP: " .. (_G.ESPEnabled and "ON" or "OFF")
+    
+    -- JIKA OFF, LANGSUNG BERSIHKAN SEMUA ESP
+    if not _G.ESPEnabled then
         for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character and not p.Character:FindFirstChild("Highlight") then
-                local hl = Instance.new("Highlight", p.Character)
-                hl.FillColor = Color3.fromRGB(255, 0, 100)
+            if p.Character and p.Character:FindFirstChild("AMBA_ESP") then
+                p.Character.AMBA_ESP:Destroy()
             end
         end
     end
-    if _G.AimbotEnabled and UserInputService:IsMouseButtonPressed(_G.AimbotKey) then
-        local h = GetTarget()
-        if h then Camera.CFrame = CFrame.new(Camera.CFrame.Position, h.Position) end
+end)
+
+-- MINIMIZE
+local MinimizeBtn = Instance.new("TextButton")
+MinimizeBtn.Parent = MainFrame
+MinimizeBtn.Position = UDim2.new(1, -40, 0, 10)
+MinimizeBtn.Size = UDim2.new(0, 30, 0, 30)
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+MinimizeBtn.Text = "-"
+MinimizeBtn.TextColor3 = Color3.new(1, 1, 1)
+MinimizeBtn.ZIndex = 10
+
+local MiniBox = Instance.new("TextButton")
+MiniBox.Parent = ScreenGui
+MiniBox.Size = UDim2.new(0, 45, 0, 45)
+MiniBox.Position = UDim2.new(0.02, 0, 0.9, 0)
+MiniBox.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+MiniBox.BorderSizePixel = 2
+MiniBox.BorderColor3 = Color3.fromRGB(255, 255, 255)
+MiniBox.Text = "A"
+MiniBox.TextColor3 = Color3.new(1, 1, 1)
+MiniBox.Visible = false
+
+MinimizeBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false; MiniBox.Visible = true end)
+MiniBox.MouseButton1Click:Connect(function() MainFrame.Visible = true; MiniBox.Visible = false end)
+
+-- MAIN LOOP (HANYA JALAN JIKA DI-ON KAN)
+RunService.RenderStepped:Connect(function()
+    -- MANUAL ESP
+    if _G.ESPEnabled then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and not p.Character:FindFirstChild("AMBA_ESP") then
+                local h = Instance.new("Highlight", p.Character)
+                h.Name = "AMBA_ESP"
+                h.FillColor = Color3.fromRGB(255, 0, 0)
+            end
+        end
+    end
+
+    -- MANUAL AIMBOT
+    if _G.AimbotEnabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
+        local target = nil
+        local maxDist = _G.CircleRadius
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
+                local pos, vis = Camera:WorldToViewportPoint(p.Character.Head.Position)
+                if vis then
+                    local mag = (Vector2.new(pos.X, pos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
+                    if mag < maxDist then
+                        target = p.Character.Head
+                        maxDist = mag
+                    end
+                end
+            end
+        end
+        if target then
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position)
+        end
     end
 end)
+
+print("AMBA.HUB SUPREME MANUAL LOADED!")
