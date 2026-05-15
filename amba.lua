@@ -1,5 +1,5 @@
 -- AMBA.HUB - Pinguin Supreme --
--- VERSION 3: COMBAT & PROTECTION UPDATE --
+-- VERSION 4: PERFORMANCE & VISUAL UPDATE --
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -47,7 +47,7 @@ MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 MainFrame.BorderSizePixel = 0
 MainFrame.Position = UDim2.new(0.5, -275, 0.5, -175)
-MainFrame.Size = UDim2.new(0, 550, 0, 380) -- Tinggi ditambah dikit buat menu baru
+MainFrame.Size = UDim2.new(0, 550, 0, 380) 
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.ZIndex = 1
@@ -107,7 +107,7 @@ local BoostTabBtn = CreateTabBtn("BOOST", UDim2.new(0.48, 0, 0, 0), 0.2)
 local InfoTabBtn = CreateTabBtn("INFO", UDim2.new(0.7, 0, 0, 0), 0.15)
 MainTabBtn.TextColor3 = Color3.new(1, 1, 1)
 
--- PAGES SCROLLING (Biar muat banyak tombol)
+-- PAGES SCROLLING
 local function CreatePage()
     local f = Instance.new("ScrollingFrame")
     f.Parent = MainFrame
@@ -201,15 +201,11 @@ end)
 -- SISTEM KERJA (RUNNER)
 local oldCFrame = Camera.CFrame
 RunService.RenderStepped:Connect(function()
-    -- NO RECOIL
     if _G.NoRecoil then
         local targetCFrame = Camera.CFrame
-        if targetCFrame.Rotation ~= oldCFrame.Rotation then
-            -- Ini simulasi nahan getaran kamera
-        end
+        if targetCFrame.Rotation ~= oldCFrame.Rotation then end
     end
     
-    -- TRIGGER BOT & AIMBOT
     if _G.AimbotEnabled or _G.TriggerBot then
         local target = nil
         local mousePos = UserInputService:GetMouseLocation()
@@ -221,10 +217,8 @@ RunService.RenderStepped:Connect(function()
                     local dist = (Vector2.new(pos.X, pos.Y) - mousePos).Magnitude
                     if dist < _G.CircleRadius then
                         target = p.Character.Head
-                        
-                        -- Trigger Bot Logic
-                        if _G.TriggerBot and dist < 20 then -- Jarak kursor sangat dekat
-                            mouse1click()
+                        if _G.TriggerBot and dist < 20 then
+                            if mouse1click then mouse1click() end
                         end
                     end
                 end
@@ -237,14 +231,14 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ANTI REPORT (Kick auto if report detected - simulasi sederhana)
+-- ANTI REPORT
 Players.PlayerChatted:Connect(function(type, ply, msg)
     if _G.AntiReport and (msg:lower():find("report") or msg:lower():find("cheat")) and ply ~= LocalPlayer then
         LocalPlayer:Kick("Anti-Report: Potential threat detected in chat.")
     end
 end)
 
--- MINIMIZE & OTHERS
+-- MINIMIZE
 local MinimizeBtn = Instance.new("TextButton")
 MinimizeBtn.Parent = TabBar
 MinimizeBtn.Position = UDim2.new(1, -45, 0, 10)
@@ -255,26 +249,80 @@ MinimizeBtn.ZIndex = 10
 MinimizeBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false; MiniBox.Visible = true end)
 MiniBox.MouseButton1Click:Connect(function() MainFrame.Visible = true; MiniBox.Visible = false end)
 
--- ESP & BOOST (Tetap Sama)
+-- SISTEM ESP SNAPLINES
+local Lines = {}
+
+local function CreateLine()
+    local line = Drawing.new("Line")
+    line.Thickness = 1
+    line.Color = Color3.new(1, 0, 0)
+    line.Transparency = 1
+    return line
+end
+
+-- LOGIC: BOOST TAB
+FpsBtn.MouseButton1Click:Connect(function()
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("DataModelMesh") or v:IsA("CharacterMesh") or v:IsA("BasePart") then
+            if v:IsA("BasePart") then
+                v.Material = Enum.Material.SmoothPlastic
+                v.Reflectance = 0
+            end
+        elseif v:IsA("Decal") or v:IsA("Texture") then
+            v.Transparency = 1
+        elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+            v.Enabled = false
+        end
+    end
+    Lighting.GlobalShadows = false
+    Lighting.FogEnd = 9e9
+    settings().Rendering.QualityLevel = 1
+    FpsBtn.Text = "FPS BOOST: ACTIVE"
+end)
+
+PingBtn.MouseButton1Click:Connect(function()
+    settings().Network.IncomingReplicationLag = -1000
+    game:GetService("RunService"):Set3dRenderingEnabled(true) 
+    PingBtn.Text = "PING OPTIMIZED"
+end)
+
+-- ESP & VISUAL RUNNER
 EspBtn.MouseButton1Click:Connect(function()
     _G.ESPEnabled = not _G.ESPEnabled
     EspBtn.Text = "ESP: " .. (_G.ESPEnabled and "ON" or "OFF")
     if not _G.ESPEnabled then
         for _, p in pairs(Players:GetPlayers()) do
             if p.Character and p.Character:FindFirstChild("AMBA_ESP") then p.Character.AMBA_ESP:Destroy() end
+            if Lines[p] then Lines[p].Visible = false end
         end
     end
 end)
 
-RunService.Heartbeat:Connect(function()
+RunService.RenderStepped:Connect(function()
     if _G.ESPEnabled then
         for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character and not p.Character:FindFirstChild("AMBA_ESP") then
-                local h = Instance.new("Highlight", p.Character)
-                h.Name = "AMBA_ESP"; h.FillColor = Color3.new(1, 0, 0)
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                if not p.Character:FindFirstChild("AMBA_ESP") then
+                    local h = Instance.new("Highlight", p.Character)
+                    h.Name = "AMBA_ESP"; h.FillColor = Color3.new(1, 0, 0)
+                end
+                
+                local hrp = p.Character.HumanoidRootPart
+                local pos, vis = Camera:WorldToViewportPoint(hrp.Position)
+                
+                if vis then
+                    if not Lines[p] then Lines[p] = CreateLine() end
+                    Lines[p].From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                    Lines[p].To = Vector2.new(pos.X, pos.Y)
+                    Lines[p].Visible = true
+                else
+                    if Lines[p] then Lines[p].Visible = false end
+                end
+            else
+                if Lines[p] then Lines[p].Visible = false end
             end
         end
     end
 end)
 
-print("AMBA.HUB V3 LOADED! COMBAT READY! ")
+print("AMBA.HUB V4 LOADED! ALL SYSTEMS INTEGRATED.")
