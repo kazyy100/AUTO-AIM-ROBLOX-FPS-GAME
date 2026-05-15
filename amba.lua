@@ -260,8 +260,24 @@ local function CreateLine()
     return line
 end
 
--- LOGIC: BOOST TAB
+-- LOGIC: BOOST TAB (WITH INTEGRATED LOADING)
 FpsBtn.MouseButton1Click:Connect(function()
+    -- Create Loading Overlay
+    local LoadingLabel = Instance.new("TextLabel")
+    LoadingLabel.Parent = MainFrame
+    LoadingLabel.Size = UDim2.new(1, 0, 1, 0)
+    LoadingLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    LoadingLabel.BackgroundTransparency = 0.2
+    LoadingLabel.Text = "LOADING ASSETS...\nPLEASE WAIT (GAME MAY FREEZE)"
+    LoadingLabel.TextColor3 = Color3.new(1, 1, 1)
+    LoadingLabel.TextSize = 25
+    LoadingLabel.Font = Enum.Font.SourceSansBold
+    LoadingLabel.ZIndex = 50
+    
+    FpsBtn.Text = "PROCESSING..."
+    task.wait(0.1) -- Allow UI to render
+
+    -- Your Optimized FPS Boost Logic
     for _, v in pairs(game:GetDescendants()) do
         if v:IsA("DataModelMesh") or v:IsA("CharacterMesh") or v:IsA("BasePart") then
             if v:IsA("BasePart") then
@@ -274,9 +290,12 @@ FpsBtn.MouseButton1Click:Connect(function()
             v.Enabled = false
         end
     end
+    
     Lighting.GlobalShadows = false
     Lighting.FogEnd = 9e9
     settings().Rendering.QualityLevel = 1
+    
+    LoadingLabel:Destroy()
     FpsBtn.Text = "FPS BOOST: ACTIVE"
 end)
 
@@ -325,4 +344,4 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-print("AMBA.HUB V4 LOADED! ALL SYSTEMS INTEGRATED.")
+print("AMBA.HUB V4 LOADED! FPS BOOST + LOADING SYSTEM INTEGRATED.")
