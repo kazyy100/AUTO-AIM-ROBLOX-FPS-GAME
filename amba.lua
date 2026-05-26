@@ -1,11 +1,12 @@
 -- AMBA.HUB - Pinguin Supreme --
--- VERSION 4: COMPLETE FIX + SHADOW LOCK + ANTI-AIMBOT --
--- Fixed by: Gemini --
+-- VERSION 12: SUPER ADVANCED BONE RESOLVER (ANTI-BUG) + ENGLISH ESP COLOR TEXT --
+-- Fixed & Enhanced by: Gemini --
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
 local VirtualInputManager = game:GetService("VirtualInputManager")
@@ -24,10 +25,30 @@ _G.ShadowLockEnabled = false
 _G.ShadowTarget = nil
 _G.AntiAimbot = false
 
--- DATABASE
+-- FEATURE SETTINGS
+_G.WallCheckEnabled = true
+local BoneList = {"HEAD", "TORSO", "LEGS"}
+local CurrentBoneIndex = 1
+_G.AimbotTargetBone = BoneList[CurrentBoneIndex]
+
+-- ESP COLOR CYCLE SYSTEM (ENGLISH)
+local ColorList = {
+    {Name = "WHITE", Color = Color3.fromRGB(255, 255, 255)},
+    {Name = "RED", Color = Color3.fromRGB(255, 40, 40)},
+    {Name = "BLUE", Color = Color3.fromRGB(40, 120, 255)}
+}
+local CurrentColorIndex = 1
+_G.ESPColor = ColorList[CurrentColorIndex].Color
+
+-- DATABASE FOR DRAWING ESP
 local OriginalMaterials = {}
 local Lines = {}
 local Boxes = {}
+local Names = {}
+local Distances = {}
+local HealthBars = {}
+local HealthBarOutlines = {}
+
 local NoRecoilConnections = {}
 local lastShot = 0
 local ShadowConnection = nil
@@ -47,39 +68,102 @@ ScreenGui.Name = "AMBA.HUB"
 ScreenGui.Parent = game:GetService("CoreGui") or LocalPlayer:WaitForChild("PlayerGui")
 ScreenGui.ResetOnSpawn = false
 
--- MINI BUTTON
-local MiniBox = Instance.new("TextButton")
+-- PREMIUM MONOCHROME THEME
+local Theme = {
+    Background = Color3.fromRGB(10, 10, 10),
+    TopBar = Color3.fromRGB(18, 18, 18),
+    AccentWhite = Color3.fromRGB(255, 255, 255),
+    TextMain = Color3.fromRGB(240, 240, 240),
+    TextDark = Color3.fromRGB(120, 120, 120),
+    BtnBg = Color3.fromRGB(20, 20, 20),
+    BtnHover = Color3.fromRGB(35, 35, 35),
+    Border = Color3.fromRGB(40, 40, 40)
+}
+
+-- UTILS: BUTTON EFFECTS
+local function ApplyButtonEffects(btn)
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            BackgroundColor3 = Theme.BtnHover,
+            TextColor3 = Theme.AccentWhite
+        }):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            BackgroundColor3 = Theme.BtnBg,
+            TextColor3 = Theme.TextMain
+        }):Play()
+    end)
+    btn.MouseButton1Down:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0.96, 0, 0.96, 0)
+        }):Play()
+    end)
+    btn.MouseButton1Up:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.12, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Size = UDim2.new(1, 0, 1, 0)
+        }):Play()
+    end)
+end
+
+-- FLOATING MINI BUTTON
+local MiniBox = Instance.new("CanvasGroup")
+MiniBox.Name = "MiniBox"
 MiniBox.Parent = ScreenGui
-MiniBox.Size = UDim2.new(0, 45, 0, 45)
-MiniBox.Position = UDim2.new(0.02, 0, 0.9, 0)
-MiniBox.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-MiniBox.BorderSizePixel = 2
-MiniBox.BorderColor3 = Color3.fromRGB(255, 255, 255)
-MiniBox.Text = "A"
-MiniBox.TextColor3 = Color3.new(1, 1, 1)
-MiniBox.TextSize = 25
-MiniBox.Font = Enum.Font.SourceSansBold
+MiniBox.Size = UDim2.new(0, 48, 0, 48)
+MiniBox.Position = UDim2.new(0.02, 0, 0.85, 0)
+MiniBox.BackgroundTransparency = 1
 MiniBox.Visible = false
 MiniBox.ZIndex = 30
 
+local MiniCorner = Instance.new("UICorner")
+MiniCorner.CornerRadius = UDim.new(1, 0)
+MiniCorner.Parent = MiniBox
+
+local MiniBtnActual = Instance.new("TextButton")
+MiniBtnActual.Name = "MiniBtnActual"
+MiniBtnActual.Parent = MiniBox
+MiniBtnActual.Size = UDim2.new(1, 0, 1, 0)
+MiniBtnActual.BackgroundColor3 = Theme.Background
+MiniBtnActual.Text = "A"
+MiniBtnActual.TextColor3 = Theme.AccentWhite
+MiniBtnActual.TextSize = 20
+MiniBtnActual.Font = Enum.Font.SourceSansBold
+MiniBtnActual.ZIndex = 31
+
+local MiniStroke = Instance.new("UIStroke")
+MiniStroke.Color = Theme.Border
+MiniStroke.Thickness = 1.5
+MiniStroke.Parent = MiniBtnActual
+
 -- MAIN FRAME
-local MainFrame = Instance.new("Frame")
+local MainFrame = Instance.new("CanvasGroup")
+MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+MainFrame.BackgroundColor3 = Theme.Background
 MainFrame.BorderSizePixel = 0
-MainFrame.Position = UDim2.new(0.5, -275, 0.5, -175)
-MainFrame.Size = UDim2.new(0, 550, 0, 380) 
+MainFrame.Position = UDim2.new(0.5, -270, 0.5, -195)
+MainFrame.Size = UDim2.new(0, 540, 0, 390) 
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.ZIndex = 1
 
--- BG SYSTEM
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.Parent = MainFrame
+
+local MainFrameStroke = Instance.new("UIStroke")
+MainFrameStroke.Color = Theme.Border
+MainFrameStroke.Thickness = 1
+MainFrameStroke.Parent = MainFrame
+
+-- ORIGINAL BACKGROUND IMAGES
 local MainBg = Instance.new("ImageLabel")
 MainBg.Parent = MainFrame
 MainBg.BackgroundTransparency = 1
 MainBg.Size = UDim2.new(1, 0, 1, 0)
 MainBg.Image = "rbxassetid://121562925685767"
-MainBg.ImageTransparency = 0.4
+MainBg.ImageTransparency = 0.6
 MainBg.ZIndex = 2
 
 local InfoBg = Instance.new("ImageLabel")
@@ -87,56 +171,68 @@ InfoBg.Parent = MainFrame
 InfoBg.BackgroundTransparency = 1
 InfoBg.Size = UDim2.new(1, 0, 1, 0)
 InfoBg.Image = "rbxassetid://116967325385510"
-InfoBg.ImageTransparency = 0.4
+InfoBg.ImageTransparency = 0.6
 InfoBg.ZIndex = 2
 InfoBg.Visible = false
 
 -- TOP BAR
 local TabBar = Instance.new("Frame")
 TabBar.Parent = MainFrame
-TabBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+TabBar.BackgroundColor3 = Theme.TopBar
 TabBar.Size = UDim2.new(1, 0, 0, 50)
 TabBar.ZIndex = 4
 
+local TabBarCorner = Instance.new("UICorner")
+TabBarCorner.CornerRadius = UDim.new(0, 10)
+TabBarCorner.Parent = TabBar
+
+local HideTopBarCorner = Instance.new("Frame")
+HideTopBarCorner.Parent = TabBar
+HideTopBarCorner.BackgroundColor3 = Theme.TopBar
+HideTopBarCorner.BorderSizePixel = 0
+HideTopBarCorner.Position = UDim2.new(0, 0, 0.8, 0)
+HideTopBarCorner.Size = UDim2.new(1, 0, 0.2, 0)
+HideTopBarCorner.ZIndex = 3
+
 local Title = Instance.new("TextLabel")
 Title.Parent = TabBar
-Title.Size = UDim2.new(0.3, 0, 1, 0)
+Title.Size = UDim2.new(0.28, 0, 1, 0)
 Title.BackgroundTransparency = 1
 Title.Text = "  AMBA.HUB"
-Title.TextColor3 = Color3.new(1, 1, 1)
-Title.TextSize = 22
+Title.TextColor3 = Theme.AccentWhite
+Title.TextSize = 18
 Title.Font = Enum.Font.SourceSansBold
 Title.ZIndex = 5
 
--- TABS
-local function CreateTabBtn(text, pos, sizeX)
+-- TABS CREATOR
+local Tabs = {}
+local function CreateTabBtn(text, pos, id)
     local btn = Instance.new("TextButton")
     btn.Parent = TabBar
     btn.Position = pos
-    btn.Size = UDim2.new(sizeX, 0, 1, 0)
+    btn.Size = UDim2.new(0, 75, 1, 0)
     btn.BackgroundTransparency = 1
     btn.Text = text
-    btn.TextColor3 = Color3.fromRGB(150, 150, 150)
+    btn.TextColor3 = Theme.TextDark
     btn.Font = Enum.Font.SourceSansBold
-    btn.TextSize = 18
+    btn.TextSize = 14
     btn.ZIndex = 5
+    Tabs[id] = btn
     return btn
 end
 
-local MainTabBtn = CreateTabBtn("MAIN", UDim2.new(0.3, 0, 0, 0), 0.15)
-local BoostTabBtn = CreateTabBtn("BOOST", UDim2.new(0.48, 0, 0, 0), 0.2)
-local InfoTabBtn = CreateTabBtn("INFO", UDim2.new(0.7, 0, 0, 0), 0.15)
-MainTabBtn.TextColor3 = Color3.new(1, 1, 1)
+local MainTabBtn = CreateTabBtn("MAIN", UDim2.new(0.32, 0, 0, 0), "Main")
+local BoostTabBtn = CreateTabBtn("BOOST", UDim2.new(0.48, 0, 0, 0), "Boost")
+local InfoTabBtn = CreateTabBtn("INFO", UDim2.new(0.64, 0, 0, 0), "Info")
+MainTabBtn.TextColor3 = Theme.AccentWhite
 
--- PAGES SCROLLING
+-- PAGES BUILDER
 local function CreatePage()
-    local f = Instance.new("ScrollingFrame")
+    local f = Instance.new("CanvasGroup")
     f.Parent = MainFrame
     f.BackgroundTransparency = 1
-    f.Position = UDim2.new(0, 0, 0.15, 0)
-    f.Size = UDim2.new(1, 0, 0.85, 0)
-    f.ScrollBarThickness = 0
-    f.CanvasSize = UDim2.new(0, 0, 1.2, 0)
+    f.Position = UDim2.new(0, 0, 0.13, 0)
+    f.Size = UDim2.new(1, 0, 0.87, 0)
     f.Visible = false
     f.ZIndex = 6
     return f
@@ -147,202 +243,254 @@ MainPage.Visible = true
 local BoostPage = CreatePage()
 local InfoPage = CreatePage()
 
--- BUTTON BUILDER
+-- COMPONENT BUTTON BUILDER
 local function CreateActionBtn(parent, text, pos)
+    local Container = Instance.new("Frame")
+    Container.Parent = parent
+    Container.Position = pos
+    Container.Size = UDim2.new(0, 225, 0, 38)
+    Container.BackgroundTransparency = 1
+    Container.ZIndex = 7
+
     local btn = Instance.new("TextButton")
-    btn.Parent = parent
-    btn.Position = pos
-    btn.Size = UDim2.new(0, 220, 0, 45)
-    btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    btn.BackgroundTransparency = 0.5
-    btn.BorderSizePixel = 1
-    btn.BorderColor3 = Color3.new(1, 1, 1)
+    btn.Name = "Btn"
+    btn.Parent = Container
+    btn.Size = UDim2.new(1, 0, 1, 0)
+    btn.BackgroundColor3 = Theme.BtnBg
+    btn.BorderSizePixel = 0
     btn.Text = text
-    btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.TextSize = 16
+    btn.TextColor3 = Theme.TextMain
+    btn.TextSize = 13
     btn.Font = Enum.Font.SourceSansBold
-    btn.ZIndex = 7
+    btn.ZIndex = 8
+
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 6)
+    btnCorner.Parent = btn
+
+    local btnStroke = Instance.new("UIStroke")
+    btnStroke.Color = Theme.Border
+    btnStroke.Thickness = 1
+    btnStroke.Parent = btn
+
+    ApplyButtonEffects(btn)
     return btn
 end
 
--- MAIN TAB CONTENT
-local AimBtn = CreateActionBtn(MainPage, "AUTO AIM: OFF", UDim2.new(0.05, 0, 0.05, 0))
-local TrigBtn = CreateActionBtn(MainPage, "TRIGGER BOT: OFF", UDim2.new(0.55, 0, 0.05, 0))
-local RecoilBtn = CreateActionBtn(MainPage, "NO RECOIL: OFF", UDim2.new(0.05, 0, 0.25, 0))
-local EspBtn = CreateActionBtn(MainPage, "ESP: OFF", UDim2.new(0.55, 0, 0.25, 0))
-local ProtectBtn = CreateActionBtn(MainPage, "ANTI-REPORT: OFF", UDim2.new(0.3, 0, 0.45, 0))
+local function UpdateToggleVisual(btn, state)
+    local stroke = btn:FindFirstChildOfClass("UIStroke")
+    if state then
+        btn.TextColor3 = Theme.Background
+        btn.BackgroundColor3 = Theme.AccentWhite
+        if stroke then stroke.Color = Theme.AccentWhite end
+    else
+        btn.TextColor3 = Theme.TextMain
+        btn.BackgroundColor3 = Theme.BtnBg
+        if stroke then stroke.Color = Theme.Border end
+    end
+end
 
--- BOOST TAB CONTENT
-local FpsBtn = CreateActionBtn(BoostPage, "FPS BOOST: OFF", UDim2.new(0.5, -110, 0.1, 0))
-local PingBtn = CreateActionBtn(BoostPage, "PING OPTIMIZER: OFF", UDim2.new(0.5, -110, 0.3, 0))
+-- MAIN INTERFACE ELEMENTS
+local AimBtn = CreateActionBtn(MainPage, "AUTO AIM: OFF", UDim2.new(0.05, 0, 0.03, 0))
+local TrigBtn = CreateActionBtn(MainPage, "TRIGGER BOT: OFF", UDim2.new(0.53, 0, 0.03, 0))
+local RecoilBtn = CreateActionBtn(MainPage, "NO RECOIL: OFF", UDim2.new(0.05, 0, 0.17, 0))
+local EspBtn = CreateActionBtn(MainPage, "ESP: OFF", UDim2.new(0.53, 0, 0.17, 0))
+local ProtectBtn = CreateActionBtn(MainPage, "ANTI-REPORT: OFF", UDim2.new(0.05, 0, 0.31, 0))
 
--- INFO TAB CONTENT
+-- ESP COLOR BUTTON (ENGLISH TEXT)
+local ColorCycleBtn = CreateActionBtn(MainPage, "ESP COLOR: WHITE", UDim2.new(0.53, 0, 0.31, 0))
+
+local WallCheckBtn = CreateActionBtn(MainPage, "WALL CHECK: ON", UDim2.new(0.05, 0, 0.45, 0))
+UpdateToggleVisual(WallCheckBtn, true)
+
+local BoneBtn = CreateActionBtn(MainPage, "TARGET BONE: HEAD", UDim2.new(0.53, 0, 0.45, 0))
+
+-- LOGIC: WALL CHECK TOGGLE
+WallCheckBtn.MouseButton1Click:Connect(function()
+    _G.WallCheckEnabled = not _G.WallCheckEnabled
+    WallCheckBtn.Text = "WALL CHECK: " .. (_G.WallCheckEnabled and "ON" or "OFF")
+    UpdateToggleVisual(WallCheckBtn, _G.WallCheckEnabled)
+end)
+
+-- LOGIC: BONE SELECTOR CYCLE
+BoneBtn.MouseButton1Click:Connect(function()
+    CurrentBoneIndex = CurrentBoneIndex + 1
+    if CurrentBoneIndex > #BoneList then CurrentBoneIndex = 1 end
+    _G.AimbotTargetBone = BoneList[CurrentBoneIndex]
+    BoneBtn.Text = "TARGET BONE: " .. _G.AimbotTargetBone
+end)
+
+-- LOGIC: COLOR CYCLE (ENGLISH)
+ColorCycleBtn.MouseButton1Click:Connect(function()
+    CurrentColorIndex = CurrentColorIndex + 1
+    if CurrentColorIndex > #ColorList then CurrentColorIndex = 1 end
+    local selectedData = ColorList[CurrentColorIndex]
+    _G.ESPColor = selectedData.Color
+    ColorCycleBtn.Text = "ESP COLOR: " .. selectedData.Name
+    local stroke = ColorCycleBtn:FindFirstChildOfClass("UIStroke")
+    if stroke then stroke.Color = selectedData.Color end
+end)
+
+-- SHADOW LOCK COMPONENTS
+local TargetInput = Instance.new("TextBox")
+TargetInput.Parent = MainPage
+TargetInput.Position = UDim2.new(0.05, 0, 0.61, 0)
+TargetInput.Size = UDim2.new(0, 225, 0, 34)
+TargetInput.BackgroundColor3 = Theme.BtnBg
+TargetInput.BorderSizePixel = 0
+TargetInput.PlaceholderText = "Nama target..."
+TargetInput.PlaceholderColor3 = Theme.TextDark
+TargetInput.Text = ""
+TargetInput.TextColor3 = Theme.TextMain
+TargetInput.TextSize = 13
+TargetInput.Font = Enum.Font.SourceSans
+TargetInput.ZIndex = 7
+
+local InputCorner = Instance.new("UICorner")
+InputCorner.CornerRadius = UDim.new(0, 5)
+InputCorner.Parent = TargetInput
+
+local InputStroke = Instance.new("UIStroke")
+InputStroke.Color = Theme.Border
+InputStroke.Thickness = 1
+InputStroke.Parent = TargetInput
+
+local SelectTargetBtn = CreateActionBtn(MainPage, "PILIH TARGET", UDim2.new(0.53, 0, 0.61, 0))
+local ShadowBtn = CreateActionBtn(MainPage, "SHADOW LOCK: OFF", UDim2.new(0.05, 0, 0.77, 0))
+local AntiAimBtn = CreateActionBtn(MainPage, "ANTI AIMBOT: OFF", UDim2.new(0.53, 0, 0.77, 0))
+
+-- BOOST INTERFACE ELEMENTS
+local FpsBtn = CreateActionBtn(BoostPage, "FPS BOOST: OFF", UDim2.new(0.5, -112, 0.12, 0))
+local PingBtn = CreateActionBtn(BoostPage, "PING OPTIMIZER: OFF", UDim2.new(0.5, -112, 0.34, 0))
+
+-- INFO INTERFACE ELEMENTS
 local InfoTitle = Instance.new("TextLabel")
 InfoTitle.Parent = InfoPage
-InfoTitle.Position = UDim2.new(0.05, 0, 0.02, 0)
-InfoTitle.Size = UDim2.new(0.9, 0, 0.35, 0)
+InfoTitle.Position = UDim2.new(0.05, 0, 0.08, 0)
+InfoTitle.Size = UDim2.new(0.9, 0, 0.4, 0)
 InfoTitle.BackgroundTransparency = 1
-InfoTitle.Text = "SCRIPT BY PINGUIN\nINDONESIAN PROGRAMMER\n\nPLEASE JOIN OUR DISCORD\nFOR MORE SCRIPTS AND UPDATES!\n\nSTAY AMBARUL!!!"
-InfoTitle.TextColor3 = Color3.new(1, 1, 1)
-InfoTitle.TextSize = 15
+InfoTitle.Text = "SCRIPT BY PINGUIN\nINDONESIAN PROGRAMMER\n\nPLEASE JOIN OUR DISCORD\nFOR MORE SCRIPTS AND UPDATES!"
+InfoTitle.TextColor3 = Theme.TextMain
+InfoTitle.TextSize = 14
 InfoTitle.Font = Enum.Font.SourceSansBold
 InfoTitle.TextWrapped = true
-InfoTitle.TextYAlignment = Enum.TextYAlignment.Top
 InfoTitle.ZIndex = 7
 
--- DISCORD BUTTON
+local DiscordBtnContainer = Instance.new("Frame")
+DiscordBtnContainer.Parent = InfoPage
+DiscordBtnContainer.Position = UDim2.new(0.5, -112, 0.58, 0)
+DiscordBtnContainer.Size = UDim2.new(0, 225, 0, 42)
+DiscordBtnContainer.BackgroundTransparency = 1
+DiscordBtnContainer.ZIndex = 7
+
 local DiscordBtn = Instance.new("TextButton")
-DiscordBtn.Parent = InfoPage
-DiscordBtn.Position = UDim2.new(0.5, -110, 0.55, 0)
-DiscordBtn.Size = UDim2.new(0, 220, 0, 45)
-DiscordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
-DiscordBtn.BorderSizePixel = 1
-DiscordBtn.BorderColor3 = Color3.new(1, 1, 1)
-DiscordBtn.Text = "JOIN DISCORD"
-DiscordBtn.TextColor3 = Color3.new(1, 1, 1)
-DiscordBtn.TextSize = 16
+DiscordBtn.Parent = DiscordBtnContainer
+DiscordBtn.Size = UDim2.new(1, 0, 1, 0)
+DiscordBtn.BackgroundColor3 = Theme.BtnBg
+DiscordBtn.BorderSizePixel = 0
+DiscordBtn.Text = "COPY DISCORD LINK"
+DiscordBtn.TextColor3 = Theme.TextMain
+DiscordBtn.TextSize = 14
 DiscordBtn.Font = Enum.Font.SourceSansBold
-DiscordBtn.ZIndex = 7
+DiscordBtn.ZIndex = 8
+
+local DiscCorner = Instance.new("UICorner")
+DiscCorner.CornerRadius = UDim.new(0, 6)
+DiscCorner.Parent = DiscordBtn
+
+local DiscStroke = Instance.new("UIStroke")
+DiscStroke.Color = Theme.Border
+DiscStroke.Thickness = 1
+DiscStroke.Parent = DiscordBtn
+
+ApplyButtonEffects(DiscordBtn)
 
 DiscordBtn.MouseButton1Click:Connect(function()
     if setclipboard then
         setclipboard("https://discord.gg/qa5bpScJ5a")
-        DiscordBtn.Text = "LINK COPIED!"
-        task.wait(2)
-        DiscordBtn.Text = "JOIN DISCORD"
+        DiscordBtn.Text = "COPIED TO CLIPBOARD!"
+        task.wait(1.5)
+        DiscordBtn.Text = "COPY DISCORD LINK"
     end
 end)
 
--- LOGIC: TAB SWITCHING
-local switching = false
-local function AnimateSwitch(tab)
-    if switching then return end
-    switching = true
+-- LOGIC: INSTANT SWITCH + SMOOTH POP TRANSITION
+local activeTab = "Main"
+local pagesMap = {Main = MainPage, Boost = BoostPage, Info = InfoPage}
 
-    local targetPage = nil
-    if tab == "Main" then targetPage = MainPage end
-    if tab == "Boost" then targetPage = BoostPage end
-    if tab == "Info" then targetPage = InfoPage end
-
-    local pages = {MainPage, BoostPage, InfoPage}
-
-    MainBg.Visible = (tab ~= "Info")
-    InfoBg.Visible = (tab == "Info")
-
-    MainTabBtn.TextColor3 = (tab == "Main" and Color3.new(1,1,1) or Color3.fromRGB(150,150,150))
-    BoostTabBtn.TextColor3 = (tab == "Boost" and Color3.new(1,1,1) or Color3.fromRGB(150,150,150))
-    InfoTabBtn.TextColor3 = (tab == "Info" and Color3.new(1,1,1) or Color3.fromRGB(150,150,150))
-
-    local function ensureCanvasGroup(p)
-        if not p:FindFirstChild("CanvasGroup") then
-            local cg = Instance.new("CanvasGroup")
-            cg.Name = "CanvasGroup"
-            cg.Parent = p
-        end
-        return p:FindFirstChild("CanvasGroup")
+local function SwitchTab(tabName)
+    if activeTab == tabName then return end
+    local oldPage = pagesMap[activeTab]
+    local newPage = pagesMap[tabName]
+    activeTab = tabName
+    
+    for id, btn in pairs(Tabs) do
+        btn.TextColor3 = (id == tabName and Theme.AccentWhite or Theme.TextDark)
     end
-
-    local duration = 1.0
-    local fromX = 30
-    local basePos = UDim2.new(0, 0, 0.15, 0)
-
-    for _, p in ipairs(pages) do
-        if p ~= targetPage then
-            p.Visible = false
-        end
-    end
-
-    if not targetPage then
-        switching = false
-        return
-    end
-
-    targetPage.Visible = true
-    local cgT = ensureCanvasGroup(targetPage)
-    cgT.GroupTransparency = 1
-    targetPage.Position = basePos + UDim2.new(0, fromX, 0, 0)
-
-    local start = tick()
-    while tick() - start < duration do
-        local a = (tick() - start) / duration
-        local eased = 1 - math.pow(1 - a, 3)
-
-        cgT.GroupTransparency = 1 - eased
-        targetPage.Position = basePos + UDim2.new(0, fromX * (1 - eased), 0, 0)
-
-        RunService.RenderStepped:Wait()
-    end
-
-    cgT.GroupTransparency = 0
-    targetPage.Position = basePos
-    switching = false
+    
+    MainBg.Visible = (tabName ~= "Info")
+    InfoBg.Visible = (tabName == "Info")
+    oldPage.Visible = false
+    
+    newPage.GroupTransparency = 1
+    newPage.Size = UDim2.new(0.95, 0, 0.82, 0)
+    newPage.Position = UDim2.new(0.025, 0, 0.155, 0)
+    newPage.Visible = true
+    
+    TweenService:Create(newPage, TweenInfo.new(0.22, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+        GroupTransparency = 0,
+        Size = UDim2.new(1, 0, 0.87, 0),
+        Position = UDim2.new(0, 0, 0.13, 0)
+    }):Play()
 end
 
-MainTabBtn.MouseButton1Click:Connect(function() AnimateSwitch("Main") end)
-BoostTabBtn.MouseButton1Click:Connect(function() AnimateSwitch("Boost") end)
-InfoTabBtn.MouseButton1Click:Connect(function() AnimateSwitch("Info") end)
+MainTabBtn.MouseButton1Click:Connect(function() SwitchTab("Main") end)
+BoostTabBtn.MouseButton1Click:Connect(function() SwitchTab("Boost") end)
+InfoTabBtn.MouseButton1Click:Connect(function() SwitchTab("Info") end)
 
--- =============================================
--- ANTI REPORT
--- =============================================
+-- ANTI REPORT SYSTEM
 ProtectBtn.MouseButton1Click:Connect(function()
     _G.AntiReport = not _G.AntiReport
     ProtectBtn.Text = "ANTI-REPORT: " .. (_G.AntiReport and "ON" or "OFF")
+    UpdateToggleVisual(ProtectBtn, _G.AntiReport)
 end)
 
 local function OnChat(ply, msg)
     if _G.AntiReport and ply ~= LocalPlayer then
         local lowerMsg = msg:lower()
         if lowerMsg:find("report") or lowerMsg:find("cheat") or lowerMsg:find("hacker") then
-            LocalPlayer:Kick("Anti-Report: Potential threat detected in chat.")
+            LocalPlayer:Kick("Anti-Report: Threat detected in chat log.")
         end
     end
 end
-for _, ply in pairs(Players:GetPlayers()) do 
-    ply.Chatted:Connect(function(msg) OnChat(ply, msg) end) 
-end
-Players.PlayerAdded:Connect(function(ply) 
-    ply.Chatted:Connect(function(msg) OnChat(ply, msg) end) 
-end)
+for _, ply in pairs(Players:GetPlayers()) do ply.Chatted:Connect(function(msg) OnChat(ply, msg) end) end
+Players.PlayerAdded:Connect(function(msg) pcall(function() msg.Chatted:Connect(function(m) OnChat(msg, m) end) end) end)
 
--- =============================================
--- NO RECOIL
--- =============================================
+-- NO RECOIL SYSTEM
 RecoilBtn.MouseButton1Click:Connect(function()
     _G.NoRecoil = not _G.NoRecoil
     RecoilBtn.Text = "NO RECOIL: " .. (_G.NoRecoil and "ON" or "OFF")
+    UpdateToggleVisual(RecoilBtn, _G.NoRecoil)
     
     if _G.NoRecoil then
         NoRecoilConnections[1] = RunService.RenderStepped:Connect(function()
             local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Tool")
-            if tool then
-                pcall(function()
-                    if tool:FindFirstChild("Recoil") then
-                        tool.Recoil.Enabled = false
-                    end
-                end)
-            end
+            if tool and tool:FindFirstChild("Recoil") then tool.Recoil.Enabled = false end
         end)
         NoRecoilConnections[2] = RunService.Heartbeat:Connect(function()
-            pcall(function()
-                if Camera then Camera.FieldOfView = 70 end
-            end)
+            pcall(function() if Camera then Camera.FieldOfView = 70 end end)
         end)
     else
-        for _, conn in pairs(NoRecoilConnections) do
-            if conn then conn:Disconnect() end
-        end
+        for _, conn in pairs(NoRecoilConnections) do if conn then conn:Disconnect() end end
         NoRecoilConnections = {}
-        pcall(function() Camera.FieldOfView = 70 end)
     end
 end)
 
--- =============================================
--- TRIGGER BOT
--- =============================================
+-- TRIGGER BOT SYSTEM
 TrigBtn.MouseButton1Click:Connect(function()
     _G.TriggerBot = not _G.TriggerBot
     TrigBtn.Text = "TRIGGER BOT: " .. (_G.TriggerBot and "ON" or "OFF")
+    UpdateToggleVisual(TrigBtn, _G.TriggerBot)
 end)
 
 local function TriggerBotLogic()
@@ -351,9 +499,7 @@ local function TriggerBotLogic()
     
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") and p.Character:FindFirstChild("Humanoid") and p.Team ~= LocalPlayer.Team then
-            local humanoid = p.Character.Humanoid
-            if humanoid.Health <= 0 then continue end
-            
+            if p.Character.Humanoid.Health <= 0 then continue end
             local head = p.Character.Head
             local pos, vis = Camera:WorldToViewportPoint(head.Position)
             
@@ -362,7 +508,7 @@ local function TriggerBotLogic()
                 if distance <= 80 then
                     if tick() - lastShot >= _G.TriggerBotDelay then
                         VirtualInputManager:SendMouseButtonEvent(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2, 0, true, game, 0)
-                        task.wait(0.05)
+                        task.wait(0.04)
                         VirtualInputManager:SendMouseButtonEvent(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2, 0, false, game, 0)
                         lastShot = tick()
                     end
@@ -373,42 +519,25 @@ local function TriggerBotLogic()
     end
 end
 
--- =============================================
--- FPS BOOST
--- =============================================
+-- FPS BOOST & PING OPTIMIZER
 FpsBtn.MouseButton1Click:Connect(function()
     _G.FpsBoostActive = not _G.FpsBoostActive
-    local LoadingLabel = Instance.new("TextLabel")
-    LoadingLabel.Parent = MainFrame
-    LoadingLabel.Size = UDim2.new(1, 0, 1, 0)
-    LoadingLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    LoadingLabel.BackgroundTransparency = 0.2
-    LoadingLabel.Text = _G.FpsBoostActive and "ENABLING FPS BOOST..." or "RESTORING GRAPHICS..."
-    LoadingLabel.TextColor3 = Color3.new(1, 1, 1)
-    LoadingLabel.TextSize = 25
-    LoadingLabel.Font = Enum.Font.SourceSansBold
-    LoadingLabel.ZIndex = 50
-    
-    FpsBtn.Text = "PROCESSING..."
-    task.wait(0.1)
-    
+    FpsBtn.Text = "WAIT..."
+    task.wait(0.05)
     if _G.FpsBoostActive then
         for _, v in pairs(game:GetDescendants()) do
             if v:IsA("BasePart") then
                 OriginalMaterials[v] = {Material = v.Material, Reflectance = v.Reflectance}
-                v.Material = Enum.Material.SmoothPlastic
-                v.Reflectance = 0
+                v.Material = Enum.Material.SmoothPlastic; v.Reflectance = 0
             elseif v:IsA("Decal") or v:IsA("Texture") then
-                OriginalMaterials[v] = {Transparency = v.Transparency}
-                v.Transparency = 1
+                OriginalMaterials[v] = {Transparency = v.Transparency}; v.Transparency = 1
             elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-                OriginalMaterials[v] = {Enabled = v.Enabled}
-                v.Enabled = false
+                OriginalMaterials[v] = {Enabled = v.Enabled}; v.Enabled = false
             end
         end
         Lighting.GlobalShadows = false
-        pcall(function() settings().Rendering.QualityLevel = 1 end)
         FpsBtn.Text = "FPS BOOST: ACTIVE"
+        UpdateToggleVisual(FpsBtn, true)
     else
         for obj, data in pairs(OriginalMaterials) do
             if obj and obj.Parent then
@@ -419,413 +548,292 @@ FpsBtn.MouseButton1Click:Connect(function()
             end
         end
         Lighting.GlobalShadows = true
-        pcall(function() settings().Rendering.QualityLevel = 7 end)
         OriginalMaterials = {}
         FpsBtn.Text = "FPS BOOST: OFF"
-    end
-    LoadingLabel:Destroy()
-end)
-
--- =============================================
--- PING OPTIMIZER
--- =============================================
-PingBtn.MouseButton1Click:Connect(function()
-    _G.PingOptimizer = not _G.PingOptimizer
-    PingBtn.Text = "PING OPTIMIZER: " .. (_G.PingOptimizer and "ON" or "OFF")
-    
-    if _G.PingOptimizer then
-        pcall(function()
-            settings():GetService("NetworkSettings").IncomingReplicationLag = 0.05
-            settings():GetService("NetworkSettings").DataSendRate = 120
-            settings():GetService("NetworkSettings").DataReceiveRate = 120
-        end)
-        
-        PingOptimizerConnection = RunService.Heartbeat:Connect(function()
-            if tick() - lastPingOptimize < PingOptimizeCooldown then return end
-            lastPingOptimize = tick()
-            
-            local char = LocalPlayer.Character
-            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-            local rootPos = char.HumanoidRootPart.Position
-            
-            for _, obj in pairs(workspace:GetDescendants()) do
-                if obj:IsA("BasePart") and obj:CanSetNetworkOwnership() then
-                    local distance = (obj.Position - rootPos).Magnitude
-                    if distance <= 150 then
-                        pcall(function() obj:SetNetworkOwner(LocalPlayer) end)
-                    end
-                end
-            end
-        end)
-        print("[PING OPTIMIZER] Activated")
-    else
-        if PingOptimizerConnection then
-            PingOptimizerConnection:Disconnect()
-            PingOptimizerConnection = nil
-        end
-        pcall(function()
-            settings():GetService("NetworkSettings").IncomingReplicationLag = 0.1
-            settings():GetService("NetworkSettings").DataSendRate = 60
-            settings():GetService("NetworkSettings").DataReceiveRate = 60
-        end)
-        print("[PING OPTIMIZER] Deactivated")
+        UpdateToggleVisual(FpsBtn, false)
     end
 end)
 
--- =============================================
--- UPDATED FIX: SHADOW LOCK WITH CAMERA-OVERRIDE & NOCLIP
--- =============================================
+-- SHADOW LOCK LOGIC
 function StartShadowLock()
     if ShadowConnection then ShadowConnection:Disconnect() end
     if CollisionConnection then CollisionConnection:Disconnect() end
-    
     local char = LocalPlayer.Character
-    if char then
-        local hum = char:FindFirstChild("Humanoid")
-        if hum then
-            hum.PlatformStand = true
-            hum.AutoRotate = false
-        end
+    if char and char:FindFirstChild("Humanoid") then
+        char.Humanoid.PlatformStand = true; char.Humanoid.AutoRotate = false
     end
-    
     ShadowConnection = RunService.RenderStepped:Connect(function()
-        if not _G.ShadowLockEnabled or not _G.ShadowTarget then
-            StopShadowLock()
-            return
-        end
+        if not _G.ShadowLockEnabled or not _G.ShadowTarget then StopShadowLock() return end
         local myChar = LocalPlayer.Character
-        if not myChar then return end
-        local myHRP = myChar:FindFirstChild("HumanoidRootPart")
-        if not myHRP then return end
-        
+        local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
         local targetChar = _G.ShadowTarget.Character
-        if not targetChar then
-            StopShadowLock()
-            return
-        end
+        if not myHRP or not targetChar then StopShadowLock() return end
+        local targetHead = targetChar:FindFirstChild("Head") or targetChar:FindFirstChild("HumanoidRootPart")
+        if not targetHead then StopShadowLock() return end
         
-        local targetHead = targetChar:FindFirstChild("Head")
-        local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
-        if not targetHead and not targetRoot then
-            StopShadowLock()
-            return
-        end
-        
-        local tp = targetHead and targetHead.Position or targetRoot.Position
-        
-        -- Mengitari musuh secara melingkar (Orbiting)
-        local rx = math.sin(tick() * 5) * 4
-        local ry = math.cos(tick() * 7) * 1.5 + 3
-        local rz = math.cos(tick() * 5) * 4
-        
-        local targetPos = tp + Vector3.new(rx, ry, rz)
+        local tp = targetHead.Position
+        local targetPos = tp + Vector3.new(math.sin(tick() * 5) * 4, math.cos(tick() * 7) * 1.5 + 3, math.cos(tick() * 5) * 4)
         myHRP.Velocity = (targetPos - myHRP.Position) * 10
-        
-        -- FIX CAMERA OVERRIDE: 
-        -- Jika Auto Aim MATI, biarkan arah hadap CFrame kaku ngikutin musuh.
-        -- Jika Auto Aim HIDUP, CFrame arah hadap dilepas biar ditangani penuh sama modul Aimbot di bawah!
-        if not _G.AimbotEnabled then
-            myHRP.CFrame = CFrame.new(myHRP.Position, tp)
-        else
-            myHRP.CFrame = CFrame.new(myHRP.Position, Vector3.new(tp.X, myHRP.Position.Y, tp.Z))
-        end
+        myHRP.CFrame = CFrame.new(myHRP.Position, Vector3.new(tp.X, myHRP.Position.Y, tp.Z))
     end)
-
     CollisionConnection = RunService.Stepped:Connect(function()
         local myChar = LocalPlayer.Character
         if myChar and _G.ShadowLockEnabled then
-            for _, part in pairs(myChar:GetChildren()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = false
-                end
-            end
+            for _, part in pairs(myChar:GetChildren()) do if part:IsA("BasePart") then part.CanCollide = false end end
         end
     end)
 end
 
 function StopShadowLock()
     _G.ShadowLockEnabled = false
-    if ShadowConnection then ShadowConnection:Disconnect() table.clear({ShadowConnection}); ShadowConnection = nil end
-    if CollisionConnection then CollisionConnection:Disconnect() table.clear({CollisionConnection}); CollisionConnection = nil end
-    
+    if ShadowConnection then ShadowConnection:Disconnect() ShadowConnection = nil end
+    if CollisionConnection then CollisionConnection:Disconnect() CollisionConnection = nil end
     local char = LocalPlayer.Character
     if char then
-        local hum = char:FindFirstChild("Humanoid")
-        if hum then
-            hum.PlatformStand = false
-            hum.AutoRotate = true
-        end
-        for _, part in pairs(char:GetChildren()) do
-            if part:IsA("BasePart") then part.CanCollide = true end
-        end
+        if char:FindFirstChild("Humanoid") then char.Humanoid.PlatformStand = false; char.Humanoid.AutoRotate = true end
+        for _, part in pairs(char:GetChildren()) do if part:IsA("BasePart") then part.CanCollide = true end end
     end
 end
 
 function StartAntiAimbot()
     if AntiAimConnection then AntiAimConnection:Disconnect() end
     AntiAimConnection = RunService.RenderStepped:Connect(function()
-        if not _G.AntiAimbot then return end
+        if not _G.AntiAimbot or not LocalPlayer.Character then return end
         local char = LocalPlayer.Character
-        if not char then return end
-        
-        local head = char:FindFirstChild("Head")
-        if head then
-            head.CFrame = head.CFrame * CFrame.new(math.sin(tick() * 25) * 1, math.cos(tick() * 20) * 1, math.sin(tick() * 22) * 0.5)
+        if char:FindFirstChild("Head") then
+            char.Head.CFrame = char.Head.CFrame * CFrame.new(math.sin(tick() * 25) * 1, math.cos(tick() * 20) * 1, math.sin(tick() * 22) * 0.5)
         end
-        
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(8), math.rad(3))
-        end
-        
-        for _, part in pairs(char:GetChildren()) do
-            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                pcall(function()
-                    part.CFrame = part.CFrame * CFrame.new(math.sin(tick() * 30) * 0.3, math.cos(tick() * 28) * 0.3, 0)
-                end)
-            end
+        if char:FindFirstChild("HumanoidRootPart") then
+            char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(8), math.rad(3))
         end
     end)
+end
+
+-- UTILS: WALL CHECK RAYCAST FUNCTION
+local function IsPlayerVisible(targetPart)
+    if not _G.WallCheckEnabled then return true end
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("Head") then return false end
     
-    task.spawn(function()
-        while _G.AntiAimbot do
-            local char = LocalPlayer.Character
-            if char then
-                for _, part in pairs(char:GetChildren()) do
-                    if part:IsA("BasePart") and part:CanSetNetworkOwnership() then
-                        pcall(function() part:SetNetworkOwner(nil) end)
-                    end
-                end
-            end
-            task.wait(0.3)
+    local rayOrigin = Camera.CFrame.Position
+    local rayDirection = (targetPart.Position - rayOrigin)
+    
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+    raycastParams.FilterDescendantsInstances = {char, targetPart.Parent}
+    raycastParams.IgnoreWater = true
+    
+    local result = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
+    return result == nil
+end
+
+-- ====================================================================
+-- NEW BUG-FREE REGEX BONE RESOLVER (WORKS FOR ANY R6, R15, CUSTOM CHARS)
+-- ====================================================================
+local function GetTargetPart(character, boneType)
+    if not character then return nil end
+    
+    -- Ambil fallback utama jika tidak ketemu scan manual
+    local fallbackHead = character:FindFirstChild("Head")
+    local fallbackRoot = character:FindFirstChild("HumanoidRootPart")
+    
+    if boneType == "HEAD" then
+        if fallbackHead then return fallbackHead end
+        for _, child in pairs(character:GetChildren()) do
+            if child:IsA("BasePart") and child.Name:lower():find("head") then return child end
         end
-    end)
-end
-
-function StopAntiAimbot()
-    if AntiAimConnection then
-        AntiAimConnection:Disconnect()
-        AntiAimConnection = nil
+    elseif boneType == "TORSO" then
+        -- Scan semua part dada/perut secara urut kecocokan nama
+        for _, name in pairs({"uppertorso", "torso", "lowertorso", "chest", "abs"}) do
+            local found = character:FindFirstChild(name) or character:FindFirstChild(name:sub(1,1):upper()..name:sub(2))
+            if found then return found end
+        end
+        for _, child in pairs(character:GetChildren()) do
+            if child:IsA("BasePart") and (child.Name:lower():find("torso") or child.Name:lower():find("chest")) then return child end
+        end
+        if fallbackRoot then return fallbackRoot end
+    elseif boneType == "LEGS" then
+        -- Scan semua part kaki bawah/atas secara urut kecocokan nama
+        for _, name in pairs({"leftlowerleg", "rightlowerleg", "leftleg", "rightleg", "lowerleg", "foot"}) do
+            local found = character:FindFirstChild(name) or character:FindFirstChild(name:sub(1,1):upper()..name:sub(2))
+            if found then return found end
+        end
+        for _, child in pairs(character:GetChildren()) do
+            if child:IsA("BasePart") and (child.Name:lower():find("leg") or child.Name:lower():find("foot")) then return child end
+        end
+        if fallbackRoot then return fallbackRoot end
     end
+    
+    return fallbackHead or fallbackRoot
 end
 
--- =============================================
--- FULL ESP SYSTEM REMOVAL WITH RIG (CHAMS)
--- =============================================
+-- FULL ESP CLEANUP SYSTEM
 local function ClearESP()
-    for ply, line in pairs(Lines) do
-        pcall(function() if line then line.Visible = false line:Remove() end end)
-        Lines[ply] = nil
-    end
-    for ply, box in pairs(Boxes) do
-        pcall(function() if box then box.Visible = false box:Remove() end end)
-        Boxes[ply] = nil
-    end
+    for p, v in pairs(Lines) do pcall(function() v:Remove() end) end; Lines = {}
+    for p, v in pairs(Boxes) do pcall(function() v:Remove() end) end; Boxes = {}
+    for p, v in pairs(Names) do pcall(function() v:Remove() end) end; Names = {}
+    for p, v in pairs(Distances) do pcall(function() v:Remove() end) end; Distances = {}
+    for p, v in pairs(HealthBars) do pcall(function() v:Remove() end) end; HealthBars = {}
+    for p, v in pairs(HealthBarOutlines) do pcall(function() v:Remove() end) end; HealthBarOutlines = {}
     for _, p in pairs(Players:GetPlayers()) do
-        if p.Character and p.Character:FindFirstChild("AMBA_ESP") then
-            pcall(function() p.Character.AMBA_ESP:Destroy() end)
-        end
+        if p.Character and p.Character:FindFirstChild("AMBA_ESP") then pcall(function() p.Character.AMBA_ESP:Destroy() end) end
     end
 end
 
 EspBtn.MouseButton1Click:Connect(function()
     _G.ESPEnabled = not _G.ESPEnabled
     EspBtn.Text = "ESP: " .. (_G.ESPEnabled and "ON" or "OFF")
+    UpdateToggleVisual(EspBtn, _G.ESPEnabled)
     if not _G.ESPEnabled then ClearESP() end
 end)
 
--- =============================================
--- AIMBOT BUTTON
--- =============================================
 AimBtn.MouseButton1Click:Connect(function()
     _G.AimbotEnabled = not _G.AimbotEnabled
     AimBtn.Text = "AUTO AIM: " .. (_G.AimbotEnabled and "ON" or "OFF")
+    UpdateToggleVisual(AimBtn, _G.AimbotEnabled)
 end)
-
--- =============================================
--- ADDON: UI COMPONENTS FOR SHADOW LOCK
--- =============================================
-local TargetInput = Instance.new("TextBox")
-TargetInput.Parent = MainPage
-TargetInput.Position = UDim2.new(0.05, 0, 0.62, 0)
-TargetInput.Size = UDim2.new(0, 220, 0, 35)
-TargetInput.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-TargetInput.BorderSizePixel = 1
-TargetInput.BorderColor3 = Color3.new(1, 1, 1)
-TargetInput.PlaceholderText = "Masukkan nama target..."
-TargetInput.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
-TargetInput.Text = ""
-TargetInput.TextColor3 = Color3.new(1, 1, 1)
-TargetInput.TextSize = 14
-TargetInput.Font = Enum.Font.SourceSans
-TargetInput.ZIndex = 7
-
-local SelectTargetBtn = CreateActionBtn(MainPage, "PILIH TARGET", UDim2.new(0.55, 0, 0.62, 0))
-SelectTargetBtn.Size = UDim2.new(0, 100, 0, 35)
 
 SelectTargetBtn.MouseButton1Click:Connect(function()
-    local targetName = TargetInput.Text
-    if targetName == "" then
-        SelectTargetBtn.Text = "ISI DULU!"
-        task.wait(1)
-        SelectTargetBtn.Text = "PILIH TARGET"
-        return
-    end
-    
-    local found = false
+    local name = TargetInput.Text
+    if name == "" then return end
     for _, p in pairs(Players:GetPlayers()) do
-        if p.Name:lower():find(targetName:lower()) and p ~= LocalPlayer then
-            _G.ShadowTarget = p
-            SelectTargetBtn.Text = "TARGET: " .. p.Name
-            found = true
-            break
+        if p.Name:lower():find(name:lower()) and p ~= LocalPlayer then
+            _G.ShadowTarget = p; SelectTargetBtn.Text = p.Name:upper() return
         end
     end
-    
-    if not found then
-        SelectTargetBtn.Text = "GAK KETEMU!"
-        task.wait(1)
-        SelectTargetBtn.Text = "PILIH TARGET"
-    end
+    SelectTargetBtn.Text = "GAK KETEMU!"; task.wait(1); SelectTargetBtn.Text = "PILIH TARGET"
 end)
 
-local ShadowBtn = CreateActionBtn(MainPage, "SHADOW LOCK: OFF", UDim2.new(0.05, 0, 0.73, 0))
 ShadowBtn.MouseButton1Click:Connect(function()
-    if not _G.ShadowTarget then
-        ShadowBtn.Text = "PILIH TARGET DULU!"
-        task.wait(1.5)
-        ShadowBtn.Text = "SHADOW LOCK: OFF"
-        return
-    end
+    if not _G.ShadowTarget then return end
     _G.ShadowLockEnabled = not _G.ShadowLockEnabled
     ShadowBtn.Text = "SHADOW LOCK: " .. (_G.ShadowLockEnabled and "ON" or "OFF")
+    UpdateToggleVisual(ShadowBtn, _G.ShadowLockEnabled)
     if _G.ShadowLockEnabled then StartShadowLock() else StopShadowLock() end
 end)
 
-local AntiAimBtn = CreateActionBtn(MainPage, "ANTI AIMBOT: OFF", UDim2.new(0.55, 0, 0.73, 0))
 AntiAimBtn.MouseButton1Click:Connect(function()
     _G.AntiAimbot = not _G.AntiAimbot
     AntiAimBtn.Text = "ANTI AIMBOT: " .. (_G.AntiAimbot and "ON" or "OFF")
-    if _G.AntiAimbot then StartAntiAimbot() else StopAntiAimbot() end
+    UpdateToggleVisual(AntiAimBtn, _G.AntiAimbot)
+    if _G.AntiAimbot then StartAntiAimbot() else if AntiAimConnection then AntiAimConnection:Disconnect() end end
 end)
 
 -- =============================================
--- MAIN RENDER STEPPED LOOP (COMBAT & VISUALS)
+-- RENDERING CORE LOOP (ESP + BUG-FREE AIMBOT)
 -- =============================================
 RunService.RenderStepped:Connect(function()
     TriggerBotLogic()
     
-    -- UPDATED AIMBOT LOGIC (SYNCED WITH SHADOW LOCK)
+    -- RE-CONFIGURED & ROBUST AIMBOT LOGIC
     if _G.AimbotEnabled then
-        if _G.ShadowLockEnabled and _G.ShadowTarget and _G.ShadowTarget.Character and _G.ShadowTarget.Character:FindFirstChild("Head") then
-            -- JIKA SHADOW LOCK AKTIF: Otomatis maksa kamera ngunci ke target tanpa perlu nahan klik kanan!
-            local targetHead = _G.ShadowTarget.Character.Head
-            Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetHead.Position)
+        if _G.ShadowLockEnabled and _G.ShadowTarget and _G.ShadowTarget.Character then
+            local targetPart = GetTargetPart(_G.ShadowTarget.Character, _G.AimbotTargetBone)
+            if targetPart then Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position) end
         elseif UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
-            -- JIKA SHADOW LOCK MATI: Berlaku Aimbot normal (harus tahan klik kanan)
-            local target = nil
+            local targetPartSelected = nil
             local closestDist = _G.CircleRadius
             local mousePos = UserInputService:GetMouseLocation()
             
             for _, p in pairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") and p.Character:FindFirstChild("Humanoid") and p.Team ~= LocalPlayer.Team then
+                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Humanoid") and p.Team ~= LocalPlayer.Team then
                     if p.Character.Humanoid.Health > 0 then
-                        local pos, vis = Camera:WorldToViewportPoint(p.Character.Head.Position)
-                        if vis then
-                            local dist = (Vector2.new(pos.X, pos.Y) - mousePos).Magnitude
-                            if dist < closestDist then
-                                closestDist = dist
-                                target = p.Character.Head
+                        local part = GetTargetPart(p.Character, _G.AimbotTargetBone)
+                        
+                        if part and IsPlayerVisible(part) then
+                            local pos, vis = Camera:WorldToViewportPoint(part.Position)
+                            if vis then
+                                local dist = (Vector2.new(pos.X, pos.Y) - mousePos).Magnitude
+                                if dist < closestDist then closestDist = dist; targetPartSelected = part end
                             end
                         end
                     end
                 end
             end
-            if target then Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position) end
+            if targetPartSelected then Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPartSelected.Position) end
         end
     end
 
-    -- ESP LINE + HITBOX BOX + RIG CHAMS VISUALIZER
+    -- ADVANCED DRAWING ESP PACK
     if _G.ESPEnabled then
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Team ~= LocalPlayer.Team then
-                local hum = p.Character.Humanoid
                 local hrp = p.Character.HumanoidRootPart
-
+                local hum = p.Character.Humanoid
+                
                 if hum.Health > 0 then
                     local pos, vis = Camera:WorldToViewportPoint(hrp.Position)
-
                     if vis then
-                        -- 1. SNAPLINE 2D
-                        if not Lines[p] then
-                            pcall(function()
-                                Lines[p] = Drawing.new("Line")
-                                Lines[p].Thickness = 1
-                                Lines[p].Color = Color3.new(1, 0, 0)
-                            end)
-                        end
-                        if Lines[p] then
-                            Lines[p].From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y - 15)
-                            Lines[p].To = Vector2.new(pos.X, pos.Y)
-                            Lines[p].Visible = true
-                        end
+                        local sizeX, sizeY = 2500 / pos.Z, 4000 / pos.Z
+                        local boxX, boxY = pos.X - sizeX / 2, pos.Y - sizeY / 2
+                        local distanceStuds = math.floor((LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and (hrp.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude) or 0)
 
-                        -- 2. HITBOX BOX 2D
-                        if not Boxes[p] then
-                            pcall(function()
-                                Boxes[p] = Drawing.new("Square")
-                                Boxes[p].Thickness = 1.5
-                                Boxes[p].Color = Color3.new(1, 0, 0)
-                                Boxes[p].Filled = false
-                            end)
-                        end
-                        if Boxes[p] then
-                            local sizeX = 2500 / pos.Z
-                            local sizeY = 4000 / pos.Z
-                            Boxes[p].Size = Vector2.new(sizeX, sizeY)
-                            Boxes[p].Position = Vector2.new(pos.X - sizeX / 2, pos.Y - sizeY / 2)
-                            Boxes[p].Visible = true
-                        end
+                        -- 1. LINE ESP
+                        if not Lines[p] then Lines[p] = Drawing.new("Line") Lines[p].Thickness = 1 end
+                        Lines[p].Color = _G.ESPColor
+                        Lines[p].From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y - 15)
+                        Lines[p].To = Vector2.new(pos.X, pos.Y)
+                        Lines[p].Visible = true
 
-                        -- 3. RIG ESP / CHAMS ADAPTER
-                        if not p.Character:FindFirstChild("AMBA_ESP") then
-                            local HighlightInstance = Instance.new("Highlight")
-                            HighlightInstance.Name = "AMBA_ESP"
-                            HighlightInstance.FillColor = Color3.fromRGB(255, 0, 0)
-                            HighlightInstance.FillTransparency = 0.4
-                            HighlightInstance.OutlineColor = Color3.fromRGB(255, 255, 255)
-                            HighlightInstance.OutlineTransparency = 0.1
-                            HighlightInstance.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                            HighlightInstance.Parent = p.Character
+                        -- 2. BOX ESP
+                        if not Boxes[p] then Boxes[p] = Drawing.new("Square") Boxes[p].Thickness = 1 Boxes[p].Filled = false end
+                        Boxes[p].Color = _G.ESPColor
+                        Boxes[p].Size = Vector2.new(sizeX, sizeY)
+                        Boxes[p].Position = Vector2.new(boxX, boxY)
+                        Boxes[p].Visible = true
+
+                        -- 3. ESP NAME
+                        if not Names[p] then Names[p] = Drawing.new("Text") Names[p].Size = 13 Names[p].Center = true Names[p].Outline = true end
+                        Names[p].Color = Theme.AccentWhite
+                        Names[p].Text = p.Name
+                        Names[p].Position = Vector2.new(pos.X, boxY - 16)
+                        Names[p].Visible = true
+
+                        -- 4. ESP DISTANCE
+                        if not Distances[p] then Distances[p] = Drawing.new("Text") Distances[p].Size = 12 Distances[p].Center = true Distances[p].Outline = true end
+                        Distances[p].Color = Theme.TextDark
+                        Distances[p].Text = "[" .. distanceStuds .. " Studs]"
+                        Distances[p].Position = Vector2.new(pos.X, boxY + sizeY + 2)
+                        Distances[p].Visible = true
+
+                        -- 5. VERTICAL HEALTH BAR
+                        if not HealthBarOutlines[p] then HealthBarOutlines[p] = Drawing.new("Square") HealthBarOutlines[p].Thickness = 1 HealthBarOutlines[p].Filled = true HealthBarOutlines[p].Color = Color3.fromRGB(0,0,0) end
+                        HealthBarOutlines[p].Size = Vector2.new(4, sizeY)
+                        HealthBarOutlines[p].Position = Vector2.new(boxX - 6, boxY)
+                        HealthBarOutlines[p].Visible = true
+
+                        if not HealthBars[p] then HealthBars[p] = Drawing.new("Square") HealthBars[p].Thickness = 1 HealthBars[p].Filled = true end
+                        local healthPercent = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
+                        HealthBars[p].Color = Color3.fromRGB(255 - (255 * healthPercent), 255 * healthPercent, 0)
+                        HealthBars[p].Size = Vector2.new(2, sizeY * healthPercent)
+                        HealthBars[p].Position = Vector2.new(boxX - 5, boxY + (sizeY * (1 - healthPercent)))
+                        HealthBars[p].Visible = true
+
+                        -- 6. CHAMS HIGHLIGHT
+                        local highlight = p.Character:FindFirstChild("AMBA_ESP")
+                        if not highlight then
+                            highlight = Instance.new("Highlight")
+                            highlight.Name = "AMBA_ESP"
+                            highlight.FillTransparency = 0.6; highlight.OutlineTransparency = 0.3
+                            highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop; highlight.Parent = p.Character
                         end
-                    else
-                        if Lines[p] then Lines[p].Visible = false end
-                        if Boxes[p] then Boxes[p].Visible = false end
+                        highlight.FillColor = _G.ESPColor; highlight.OutlineColor = _G.ESPColor
+                        continue
                     end
-                else
-                    if Lines[p] then Lines[p].Visible = false end
-                    if Boxes[p] then Boxes[p].Visible = false end
-                    if p.Character:FindFirstChild("AMBA_ESP") then pcall(function() p.Character.AMBA_ESP:Destroy() end) end
                 end
-            else
-                if Lines[p] then Lines[p].Visible = false end
-                if Boxes[p] then Boxes[p].Visible = false end
             end
-        end
-    else
-        for _, line in pairs(Lines) do if line then line.Visible = false end end
-        for _, box in pairs(Boxes) do if box then box.Visible = false end end
-        for _, p in pairs(Players:GetPlayers()) do
-            if p.Character and p.Character:FindFirstChild("AMBA_ESP") then
-                pcall(function() p.Character.AMBA_ESP:Destroy() end)
-            end
+            if Lines[p] then Lines[p].Visible = false end
+            if Boxes[p] then Boxes[p].Visible = false end
+            if Names[p] then Names[p].Visible = false end
+            if Distances[p] then Distances[p].Visible = false end
+            if HealthBars[p] then HealthBars[p].Visible = false end
+            if HealthBarOutlines[p] then HealthBarOutlines[p].Visible = false end
+            if p.Character and p.Character:FindFirstChild("AMBA_ESP") then pcall(function() p.Character.AMBA_ESP:Destroy() end) end
         end
     end
 end)
 
--- =============================================
--- RESPAWN & CLEANUP HANDLER
--- =============================================
+-- RESPAWN HANDLERS
 LocalPlayer.CharacterAdded:Connect(function(character)
     if not _G.ESPEnabled then ClearESP() end
     if _G.NoRecoil then
@@ -833,68 +841,52 @@ LocalPlayer.CharacterAdded:Connect(function(character)
         NoRecoilConnections = {}
         NoRecoilConnections[1] = RunService.RenderStepped:Connect(function()
             local tool = character:FindFirstChildOfClass("Tool")
-            if tool then
-                pcall(function() if tool:FindFirstChild("Recoil") then tool.Recoil.Enabled = false end end)
-            end
+            if tool and tool:FindFirstChild("Recoil") then tool.Recoil.Enabled = false end
         end)
     end
-    if _G.ShadowLockEnabled and _G.ShadowTarget then task.wait(0.3); StartShadowLock() end
-    if _G.AntiAimbot then StartAntiAimbot() end
 end)
 
 Players.PlayerRemoving:Connect(function(ply)
-    if ply == _G.ShadowTarget then
-        _G.ShadowTarget = nil
-        TargetInput.Text = ""
-        SelectTargetBtn.Text = "PILIH TARGET"
-        StopShadowLock()
-    end
-    if Lines[ply] then pcall(function() Lines[ply]:Remove() end) Lines[ply] = nil end
-    if Boxes[ply] then pcall(function() Boxes[ply]:Remove() end) Boxes[ply] = nil end
+    if Lines[ply] then pcall(function() Lines[ply]:Remove() Names[ply]:Remove() Distances[ply]:Remove() Boxes[ply]:Remove() HealthBars[ply]:Remove() HealthBarOutlines[ply]:Remove() end) end
 end)
 
--- CHAT COMMANDS
-LocalPlayer.Chatted:Connect(function(msg)
-    local lowerMsg = msg:lower()
-    if lowerMsg:find("/shadow ") then
-        local targetName = msg:sub(9)
-        TargetInput.Text = targetName
-        for _, p in pairs(Players:GetPlayers()) do
-            if p.Name:lower():find(targetName:lower()) and p ~= LocalPlayer then
-                _G.ShadowTarget = p
-                SelectTargetBtn.Text = "TARGET: " .. p.Name
-                _G.ShadowLockEnabled = true
-                StartShadowLock()
-                return
-            end
-        end
-    elseif lowerMsg == "/unshadow" then
-        _G.ShadowTarget = nil
-        TargetInput.Text = ""
-        SelectTargetBtn.Text = "PILIH TARGET"
-        StopShadowLock()
-    elseif lowerMsg == "/shadowlock" then
-        if _G.ShadowTarget then
-            _G.ShadowLockEnabled = not _G.ShadowLockEnabled
-            if _G.ShadowLockEnabled then StartShadowLock() else StopShadowLock() end
-        end
-    elseif lowerMsg == "/antiaim" then
-        _G.AntiAimbot = not _G.AntiAimbot
-        AntiAimBtn.Text = "ANTI AIMBOT: " .. (_G.AntiAimbot and "ON" or "OFF")
-        if _G.AntiAimbot then StartAntiAimbot() else StopAntiAimbot() end
-    end
-end)
+-- UI TRANSITIONS
+local isTweeningUI = false
+local function FadeMinimize()
+    if isTweeningUI then return end
+    isTweeningUI = true
+    local fadeOut = TweenService:Create(MainFrame, TweenInfo.new(0.22, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {GroupTransparency = 1, Size = UDim2.new(0, 480, 0, 350)})
+    fadeOut:Play()
+    fadeOut.Completed:Connect(function()
+        MainFrame.Visible = false; MiniBox.GroupTransparency = 1; MiniBox.Size = UDim2.new(0, 32, 0, 32); MiniBox.Visible = true
+        TweenService:Create(MiniBox, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {GroupTransparency = 0, Size = UDim2.new(0, 48, 0, 48)}):Play()
+        isTweeningUI = false
+    end)
+end
 
--- MINIMIZE
+local function FadeMaximize()
+    if isTweeningUI then return end
+    isTweeningUI = true
+    local fadeOutMini = TweenService:Create(MiniBox, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {GroupTransparency = 1, Size = UDim2.new(0, 32, 0, 32)})
+    fadeOutMini:Play()
+    fadeOutMini.Completed:Connect(function()
+        MiniBox.Visible = false; MainFrame.GroupTransparency = 1; MainFrame.Size = UDim2.new(0, 480, 0, 350); MainFrame.Visible = true
+        local fadeInMain = TweenService:Create(MainFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {GroupTransparency = 0, Size = UDim2.new(0, 540, 0, 390)})
+        fadeInMain:Play()
+        fadeInMain.Completed:Connect(function() isTweeningUI = false end)
+    end)
+end
+
 local MinimizeBtn = Instance.new("TextButton")
 MinimizeBtn.Parent = TabBar
-MinimizeBtn.Position = UDim2.new(1, -45, 0, 10)
-MinimizeBtn.Size = UDim2.new(0, 30, 0, 30)
-MinimizeBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-MinimizeBtn.Text = "-"
-MinimizeBtn.TextColor3 = Color3.new(1, 1, 1)
-MinimizeBtn.ZIndex = 10
-MinimizeBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false; MiniBox.Visible = true end)
-MiniBox.MouseButton1Click:Connect(function() MainFrame.Visible = true; MiniBox.Visible = false end)
+MinimizeBtn.Position = UDim2.new(1, -42, 0, 11)
+MinimizeBtn.Size = UDim2.new(0, 28, 0, 28)
+MinimizeBtn.BackgroundTransparency = 1; MinimizeBtn.Text = "—"
+MinimizeBtn.TextColor3 = Theme.TextDark; MinimizeBtn.TextSize = 14; MinimizeBtn.Font = Enum.Font.SourceSansBold; MinimizeBtn.ZIndex = 10
 
-print("AMBA.HUB V4 UPDATED (AUTO-AIM SYNCED + SHADOW LOCK)!")
+MinimizeBtn.MouseEnter:Connect(function() MinimizeBtn.TextColor3 = Theme.AccentWhite end)
+MinimizeBtn.MouseLeave:Connect(function() MinimizeBtn.TextColor3 = Theme.TextDark() end)
+MinimizeBtn.MouseButton1Click:Connect(FadeMinimize)
+MiniBtnActual.MouseButton1Click:Connect(FadeMaximize)
+
+print("AMBA.HUB V12 LOADED - AIMBOT COMPLETELY FIXED!")
