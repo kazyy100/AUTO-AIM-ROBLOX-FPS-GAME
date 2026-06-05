@@ -150,15 +150,16 @@ local function CreateKeyUI()
         SubmitBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     end)
 
+    -- Tombol 1: SafeLink Asli
     local GetKeyBtn = Instance.new("TextButton")
     GetKeyBtn.Parent = KeyFrame
     GetKeyBtn.Position = UDim2.new(0, 20, 0, 222)
-    GetKeyBtn.Size = UDim2.new(1, -40, 0, 36)
+    GetKeyBtn.Size = UDim2.new(0, 120, 0, 36)
     GetKeyBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     GetKeyBtn.BorderSizePixel = 0
-    GetKeyBtn.Text = "🔑  GET KEY  →  sfl.gl/nyx8H"
+    GetKeyBtn.Text = "🔑 SAFELINK"
     GetKeyBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
-    GetKeyBtn.TextSize = 13
+    GetKeyBtn.TextSize = 12
     GetKeyBtn.Font = Enum.Font.SourceSansBold
     GetKeyBtn.ZIndex = 3
     Instance.new("UICorner", GetKeyBtn).CornerRadius = UDim.new(0, 8)
@@ -181,11 +182,89 @@ local function CreateKeyUI()
     GetKeyBtn.MouseButton1Click:Connect(function()
         pcall(function() setclipboard("https://sfl.gl/ISXiCFTJ") end)
         pcall(function() game:GetService("GuiService"):OpenBrowserWindow("https://sfl.gl/ISXiCFTJ") end)
-        GetKeyBtn.Text = "✔  Link disalin! Buka browser kamu"
+        GetKeyBtn.Text = "✔ Disalin!"
         GetKeyBtn.TextColor3 = Color3.fromRGB(80, 220, 80)
         task.wait(2.5)
-        GetKeyBtn.Text = "🔑  GET KEY  →  sfl.gl/nyx8H"
+        GetKeyBtn.Text = "🔑 SAFELINK"
         GetKeyBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+    end)
+
+    -- Tombol 2: Loot Labs
+    local LootBtn = Instance.new("TextButton")
+    LootBtn.Parent = KeyFrame
+    LootBtn.Position = UDim2.new(0, 150, 0, 222)
+    LootBtn.Size = UDim2.new(0, 120, 0, 36)
+    LootBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    LootBtn.BorderSizePixel = 0
+    LootBtn.Text = "💎 LOOT LABS"
+    LootBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+    LootBtn.TextSize = 12
+    LootBtn.Font = Enum.Font.SourceSansBold
+    LootBtn.ZIndex = 3
+    Instance.new("UICorner", LootBtn).CornerRadius = UDim.new(0, 8)
+
+    local LootStroke = Instance.new("UIStroke")
+    LootStroke.Parent = LootBtn
+    LootStroke.Color = Color3.fromRGB(60, 60, 60)
+    LootStroke.Thickness = 1
+
+    LootBtn.MouseEnter:Connect(function()
+        LootBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+        LootBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        LootStroke.Color = Color3.fromRGB(120, 120, 120)
+    end)
+    LootBtn.MouseLeave:Connect(function()
+        LootBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        LootBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+        LootStroke.Color = Color3.fromRGB(60, 60, 60)
+    end)
+    LootBtn.MouseButton1Click:Connect(function()
+        pcall(function() setclipboard("https://lootdest.org/s?zzHB6pGp") end)
+        pcall(function() game:GetService("GuiService"):OpenBrowserWindow("https://lootdest.org/s?zzHB6pGp") end)
+        LootBtn.Text = "✔ Disalin!"
+        LootBtn.TextColor3 = Color3.fromRGB(80, 220, 80)
+        task.wait(2.5)
+        LootBtn.Text = "💎 LOOT LABS"
+        LootBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+    end)
+
+    -- Tombol 3: Linkvertise Baru
+    local LinkBtn = Instance.new("TextButton")
+    LinkBtn.Parent = KeyFrame
+    LinkBtn.Position = UDim2.new(0, 280, 0, 222)
+    LinkBtn.Size = UDim2.new(0, 120, 0, 36)
+    LinkBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    LinkBtn.BorderSizePixel = 0
+    LinkBtn.Text = "🌐 LINKVERTISE"
+    LinkBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+    LinkBtn.TextSize = 12
+    LinkBtn.Font = Enum.Font.SourceSansBold
+    LinkBtn.ZIndex = 3
+    Instance.new("UICorner", LinkBtn).CornerRadius = UDim.new(0, 8)
+
+    local LinkStroke = Instance.new("UIStroke")
+    LinkStroke.Parent = LinkBtn
+    LinkStroke.Color = Color3.fromRGB(60, 60, 60)
+    LinkStroke.Thickness = 1
+
+    LinkBtn.MouseEnter:Connect(function()
+        LinkBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+        LinkBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        LinkStroke.Color = Color3.fromRGB(120, 120, 120)
+    end)
+    LinkBtn.MouseLeave:Connect(function()
+        LinkBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        LinkBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+        LinkStroke.Color = Color3.fromRGB(60, 60, 60)
+    end)
+    LinkBtn.MouseButton1Click:Connect(function()
+        pcall(function() setclipboard("https://link-center.net/6128129/vyp4jy3TMThD") end)
+        pcall(function() game:GetService("GuiService"):OpenBrowserWindow("https://link-center.net/6128129/vyp4jy3TMThD") end)
+        LinkBtn.Text = "✔ Disalin!"
+        LinkBtn.TextColor3 = Color3.fromRGB(80, 220, 80)
+        task.wait(2.5)
+        LinkBtn.Text = "🌐 LINKVERTISE"
+        LinkBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
     end)
 
     return KeyGui, InputBox, SubmitBtn, StatusLabel
